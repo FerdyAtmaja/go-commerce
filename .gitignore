@@ -1,25 +1,36 @@
-# Binaries
+# Binaries for programs and plugins
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
+
+# Test binary, built with `go test -c`
 *.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
 *.out
-go-commerce
-go-commerce.exe
+
+# Dependency directories (remove the comment below to include it)
+# vendor/
+
+# Go workspace file
+go.work
 
 # Environment variables
 .env
 .env.local
-.env.*.local
+.env.production
+
+# Uploads
+uploads/*
+!uploads/.gitkeep
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
 
 # OS
 .DS_Store
@@ -27,19 +38,17 @@ Thumbs.db
 
 # Logs
 *.log
+logs/
 
-# Dependencies
-vendor/
-
-# Build
-dist/
-build/
-bin/
-
-# Test coverage
-*.coverprofile
-coverage.html
-coverage.out
+# Database
+*.db
+*.sqlite
+*.sqlite3
 
 # Other
 README.md
+rundown.txt
+soal.txt
+image.png
+Go Commerce API.postman_collection.json
+Go Commerce API.postman_environment.json
