@@ -6,9 +6,14 @@ import (
 	"os/signal"
 	"syscall"
 
+	"go-commerce/internal/domain"
+	"go-commerce/internal/handler/http"
 	"go-commerce/internal/handler/response"
+	"go-commerce/internal/repository/mysql"
+	"go-commerce/internal/usecase"
 	"go-commerce/pkg/config"
 	"go-commerce/pkg/database"
+	"go-commerce/pkg/jwt"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -25,6 +30,20 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}
+
+	// Auto migrate
+	if err := db.AutoMigrate(&domain.User{}); err != nil {
+		log.Fatal("Failed to migrate database:", err)
+	}
+
+	// Initialize JWT manager
+	jwtManager := jwt.NewJWTManager(cfg.JWT.Secret, cfg.JWT.ExpireHours, cfg.JWT.RefreshExpireHours)
+
+	// Initialize repositories
+	userRepo := mysql.NewUserRepository(db)
+
+	// Initialize usecases
+	authUsecase := usecase.NewAuthUsecase(userRepo, jwtManager)
 
 	// Initialize Fiber app
 	app := fiber.New(fiber.Config{
@@ -52,15 +71,17 @@ func main() {
 	// Health check endpoint
 	app.Get("/health", func(c *fiber.Ctx) error {
 		return response.Success(c, "Server is running", fiber.Map{
-			"status": "healthy",
+			"status":   "healthy",
 			"database": "connected",
 		})
 	})
 
-	// API routes
+	// Setup routes
+	router := http.NewRouter(app, jwtManager)
+	router.SetupAuthRoutes(authUsecase)
+
+	// API info endpoint
 	api := app.Group("/api/v1")
-	
-	// Placeholder for future routes
 	api.Get("/", func(c *fiber.Ctx) error {
 		return response.Success(c, "Go Commerce API v1", fiber.Map{
 			"version": "1.0.0",

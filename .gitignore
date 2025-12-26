@@ -45,6 +45,9 @@ logs/
 *.sqlite
 *.sqlite3
 
+# Development Log
+DEVELOPMENT_LOG.md
+
 # Other
 README.md
 rundown.txt

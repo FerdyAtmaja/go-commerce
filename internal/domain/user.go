@@ -1,0 +1,53 @@
+package domain
+
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
+
+type User struct {
+	ID          uint           `json:"id" gorm:"primaryKey"`
+	Name        string         `json:"name" gorm:"not null" validate:"required,min=2,max=100"`
+	Email       string         `json:"email" gorm:"uniqueIndex;not null" validate:"required,email"`
+	Phone       string         `json:"phone" gorm:"uniqueIndex;not null" validate:"required,min=10,max=15"`
+	Password    string         `json:"-" gorm:"not null" validate:"required,min=6"`
+	DateOfBirth *time.Time     `json:"date_of_birth"`
+	PhotoURL    string         `json:"photo_url"`
+	IsAdmin     bool           `json:"is_admin" gorm:"default:false"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+	DeletedAt   gorm.DeletedAt `json:"-" gorm:"index"`
+}
+
+type UserRepository interface {
+	Create(user *User) error
+	GetByID(id uint) (*User, error)
+	GetByEmail(email string) (*User, error)
+	GetByPhone(phone string) (*User, error)
+	Update(user *User) error
+	Delete(id uint) error
+}
+
+type RegisterRequest struct {
+	Name        string `json:"name" validate:"required,min=2,max=100"`
+	Email       string `json:"email" validate:"required,email"`
+	Phone       string `json:"phone" validate:"required,min=10,max=15"`
+	Password    string `json:"password" validate:"required,min=6"`
+	DateOfBirth string `json:"date_of_birth,omitempty"`
+}
+
+type LoginRequest struct {
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required"`
+}
+
+type AuthResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	User         *User  `json:"user"`
+}
+
+type RefreshTokenRequest struct {
+	RefreshToken string `json:"refresh_token" validate:"required"`
+}
