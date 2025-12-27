@@ -6,17 +6,16 @@ import (
 
 	"go-commerce/internal/domain"
 	"go-commerce/internal/handler/response"
-	"go-commerce/internal/service"
 
 	"gorm.io/gorm"
 )
 
 type AddressUsecase struct {
 	addressRepo   domain.AddressRepository
-	regionService *service.IndonesiaRegionService
+	regionService domain.RegionService
 }
 
-func NewAddressUsecase(addressRepo domain.AddressRepository, regionService *service.IndonesiaRegionService) *AddressUsecase {
+func NewAddressUsecase(addressRepo domain.AddressRepository, regionService domain.RegionService) *AddressUsecase {
 	return &AddressUsecase{
 		addressRepo:   addressRepo,
 		regionService: regionService,

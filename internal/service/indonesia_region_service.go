@@ -15,7 +15,7 @@ type IndonesiaRegionService struct {
 	client  *http.Client
 }
 
-func NewIndonesiaRegionService() *IndonesiaRegionService {
+func NewIndonesiaRegionService() domain.RegionService {
 	return &IndonesiaRegionService{
 		baseURL: "https://emsifa.github.io/api-wilayah-indonesia/api",
 		client: &http.Client{
