@@ -5,8 +5,10 @@ CREATE TABLE categories (
     slug VARCHAR(255) UNIQUE NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL,
     FOREIGN KEY (parent_id) REFERENCES categories(id) ON DELETE SET NULL
 );
 
 CREATE INDEX idx_categories_parent ON categories(parent_id);
 CREATE INDEX idx_categories_slug ON categories(slug);
+CREATE INDEX idx_categories_deleted_at ON categories(deleted_at);

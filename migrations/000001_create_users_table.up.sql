@@ -15,9 +15,11 @@ CREATE TABLE users (
     last_login_at TIMESTAMP NULL,
     status ENUM('active', 'blocked') DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL
 );
 
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_status ON users(status);
 CREATE INDEX idx_users_is_admin ON users(is_admin);
+CREATE INDEX idx_users_deleted_at ON users(deleted_at);

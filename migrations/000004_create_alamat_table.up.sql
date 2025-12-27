@@ -9,8 +9,10 @@ CREATE TABLE alamat (
     is_default BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL,
     FOREIGN KEY (id_user) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_alamat_user ON alamat(id_user);
 CREATE INDEX idx_alamat_default ON alamat(is_default);
+CREATE INDEX idx_alamat_deleted_at ON alamat(deleted_at);
