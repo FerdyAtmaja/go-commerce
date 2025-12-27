@@ -122,3 +122,16 @@ func (r *Router) SetupProductRoutes(productUsecase *usecase.ProductUsecase) {
 	products.Put("/:id/photos/:photoId/primary", jwtMiddleware, productHandler.SetPrimaryPhoto)
 	products.Delete("/:id/photos/:photoId", jwtMiddleware, productHandler.DeleteProductPhoto)
 }
+
+func (r *Router) SetupTransactionRoutes(transactionUsecase *usecase.TransactionUsecase) {
+	transactionHandler := NewTransactionHandler(transactionUsecase)
+	
+	api := r.app.Group("/api/v1")
+	transactions := api.Group("/transactions")
+
+	// Protected routes
+	jwtMiddleware := middleware.JWTMiddleware(r.jwtManager)
+	transactions.Post("/", jwtMiddleware, transactionHandler.CreateTransaction)
+	transactions.Get("/my", jwtMiddleware, transactionHandler.GetMyTransactions)
+	transactions.Get("/:id", jwtMiddleware, transactionHandler.GetTransactionByID)
+}

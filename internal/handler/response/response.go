@@ -81,3 +81,12 @@ func Paginated(c *fiber.Ctx, message string, data interface{}, meta PaginationMe
 		Meta:    meta,
 	})
 }
+
+func SuccessWithMeta(c *fiber.Ctx, message string, data interface{}, meta PaginationMeta) error {
+	return c.Status(fiber.StatusOK).JSON(PaginatedResponse{
+		Status:  "success",
+		Message: message,
+		Data:    data,
+		Meta:    meta,
+	})
+}
