@@ -20,7 +20,7 @@ func NewUserUsecase(userRepo domain.UserRepository) *UserUsecase {
 	}
 }
 
-func (u *UserUsecase) GetProfile(userID uint) (*domain.User, error) {
+func (u *UserUsecase) GetProfile(userID uint64) (*domain.User, error) {
 	user, err := u.userRepo.GetByID(userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -34,7 +34,7 @@ func (u *UserUsecase) GetProfile(userID uint) (*domain.User, error) {
 	return user, nil
 }
 
-func (u *UserUsecase) UpdateProfile(userID uint, req *domain.UpdateProfileRequest) (*domain.User, error) {
+func (u *UserUsecase) UpdateProfile(userID uint64, req *domain.UpdateProfileRequest) (*domain.User, error) {
 	// Get existing user
 	user, err := u.userRepo.GetByID(userID)
 	if err != nil {
@@ -73,7 +73,7 @@ func (u *UserUsecase) UpdateProfile(userID uint, req *domain.UpdateProfileReques
 	return user, nil
 }
 
-func (u *UserUsecase) UpdatePhoto(userID uint, photoURL string) (*domain.User, error) {
+func (u *UserUsecase) UpdatePhoto(userID uint64, photoURL string) (*domain.User, error) {
 	user, err := u.userRepo.GetByID(userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -92,7 +92,7 @@ func (u *UserUsecase) UpdatePhoto(userID uint, photoURL string) (*domain.User, e
 	return user, nil
 }
 
-func (u *UserUsecase) ChangePassword(userID uint, req *domain.ChangePasswordRequest) error {
+func (u *UserUsecase) ChangePassword(userID uint64, req *domain.ChangePasswordRequest) error {
 	user, err := u.userRepo.GetByID(userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

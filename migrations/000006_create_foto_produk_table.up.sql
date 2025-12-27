@@ -6,9 +6,11 @@ CREATE TABLE foto_produk (
     position BIGINT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL,
     FOREIGN KEY (id_produk) REFERENCES produk(id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_foto_produk_produk ON foto_produk(id_produk);
 CREATE INDEX idx_foto_produk_primary ON foto_produk(is_primary);
 CREATE INDEX idx_foto_produk_position ON foto_produk(position);
+CREATE INDEX idx_foto_produk_deleted_at ON foto_produk(deleted_at);

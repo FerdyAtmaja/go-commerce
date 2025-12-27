@@ -18,7 +18,7 @@ func (r *addressRepository) Create(address *domain.Address) error {
 	return r.db.Create(address).Error
 }
 
-func (r *addressRepository) GetByID(id uint) (*domain.Address, error) {
+func (r *addressRepository) GetByID(id uint64) (*domain.Address, error) {
 	var address domain.Address
 	err := r.db.Preload("User").First(&address, id).Error
 	if err != nil {
@@ -27,7 +27,7 @@ func (r *addressRepository) GetByID(id uint) (*domain.Address, error) {
 	return &address, nil
 }
 
-func (r *addressRepository) GetByUserID(userID uint, limit, offset int) ([]*domain.Address, int64, error) {
+func (r *addressRepository) GetByUserID(userID uint64, limit, offset int) ([]*domain.Address, int64, error) {
 	var addresses []*domain.Address
 	var total int64
 
@@ -50,11 +50,11 @@ func (r *addressRepository) Update(address *domain.Address) error {
 	return r.db.Save(address).Error
 }
 
-func (r *addressRepository) Delete(id uint) error {
+func (r *addressRepository) Delete(id uint64) error {
 	return r.db.Delete(&domain.Address{}, id).Error
 }
 
-func (r *addressRepository) CheckOwnership(addressID, userID uint) bool {
+func (r *addressRepository) CheckOwnership(addressID, userID uint64) bool {
 	var count int64
 	r.db.Model(&domain.Address{}).Where("id = ? AND user_id = ?", addressID, userID).Count(&count)
 	return count > 0

@@ -7,26 +7,34 @@ import (
 )
 
 type User struct {
-	ID          uint           `json:"id" gorm:"primaryKey"`
-	Name        string         `json:"name" gorm:"not null" validate:"required,min=2,max=100"`
-	Email       string         `json:"email" gorm:"uniqueIndex;not null" validate:"required,email"`
-	Phone       string         `json:"phone" gorm:"uniqueIndex;not null" validate:"required,min=10,max=15"`
-	Password    string         `json:"-" gorm:"not null" validate:"required,min=6"`
-	DateOfBirth *time.Time     `json:"date_of_birth"`
-	PhotoURL    string         `json:"photo_url"`
-	IsAdmin     bool           `json:"is_admin" gorm:"default:false"`
-	CreatedAt   time.Time      `json:"created_at"`
-	UpdatedAt   time.Time      `json:"updated_at"`
-	DeletedAt   gorm.DeletedAt `json:"-" gorm:"index"`
+	ID              uint64         `json:"id" gorm:"primaryKey"`
+	Name            string         `json:"name" gorm:"column:nama;not null" validate:"required,min=2,max=100"`
+	Email           string         `json:"email" gorm:"uniqueIndex;not null" validate:"required,email"`
+	Phone           string         `json:"phone" gorm:"column:notelp;uniqueIndex;not null" validate:"required,min=10,max=15"`
+	Password        string         `json:"-" gorm:"column:kata_sandi;not null" validate:"required,min=6"`
+	DateOfBirth     *time.Time     `json:"date_of_birth" gorm:"column:tanggal_lahir"`
+	Gender          string         `json:"gender" gorm:"column:jenis_kelamin"`
+	About           string         `json:"about" gorm:"column:tentang"`
+	Job             string         `json:"job" gorm:"column:pekerjaan"`
+	ProvinceID      *uint64        `json:"province_id" gorm:"column:id_provinsi"`
+	CityID          *uint64        `json:"city_id" gorm:"column:id_kota"`
+	PhotoURL        string         `json:"photo_url"`
+	IsAdmin         bool           `json:"is_admin" gorm:"default:false"`
+	EmailVerifiedAt *time.Time     `json:"email_verified_at"`
+	LastLoginAt     *time.Time     `json:"last_login_at"`
+	Status          string         `json:"status" gorm:"default:active"`
+	CreatedAt       time.Time      `json:"created_at"`
+	UpdatedAt       time.Time      `json:"updated_at"`
+	DeletedAt       gorm.DeletedAt `json:"-" gorm:"index"`
 }
 
 type UserRepository interface {
 	Create(user *User) error
-	GetByID(id uint) (*User, error)
+	GetByID(id uint64) (*User, error)
 	GetByEmail(email string) (*User, error)
 	GetByPhone(phone string) (*User, error)
 	Update(user *User) error
-	Delete(id uint) error
+	Delete(id uint64) error
 }
 
 type RegisterRequest struct {

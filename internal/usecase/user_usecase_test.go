@@ -16,7 +16,7 @@ func TestUserUsecase_GetProfile_Success(t *testing.T) {
 	mockUserRepo := new(mocks.MockUserRepository)
 	userUsecase := NewUserUsecase(mockUserRepo)
 
-	userID := uint(1)
+	userID := uint64(1)
 	user := &domain.User{
 		ID:       userID,
 		Name:     "Test User",
@@ -45,7 +45,7 @@ func TestUserUsecase_GetProfile_NotFound(t *testing.T) {
 	mockUserRepo := new(mocks.MockUserRepository)
 	userUsecase := NewUserUsecase(mockUserRepo)
 
-	userID := uint(999)
+	userID := uint64(999)
 
 	// Mock expectations
 	mockUserRepo.On("GetByID", userID).Return(nil, gorm.ErrRecordNotFound)
@@ -66,7 +66,7 @@ func TestUserUsecase_UpdateProfile_Success(t *testing.T) {
 	mockUserRepo := new(mocks.MockUserRepository)
 	userUsecase := NewUserUsecase(mockUserRepo)
 
-	userID := uint(1)
+	userID := uint64(1)
 	existingUser := &domain.User{
 		ID:    userID,
 		Name:  "Old Name",
@@ -103,7 +103,7 @@ func TestUserUsecase_UpdateProfile_PhoneAlreadyExists(t *testing.T) {
 	mockUserRepo := new(mocks.MockUserRepository)
 	userUsecase := NewUserUsecase(mockUserRepo)
 
-	userID := uint(1)
+	userID := uint64(1)
 	existingUser := &domain.User{
 		ID:    userID,
 		Name:  "Test User",
@@ -141,7 +141,7 @@ func TestUserUsecase_ChangePassword_Success(t *testing.T) {
 	mockUserRepo := new(mocks.MockUserRepository)
 	userUsecase := NewUserUsecase(mockUserRepo)
 
-	userID := uint(1)
+	userID := uint64(1)
 	currentPassword := "oldpassword"
 	newPassword := "newpassword"
 	hashedCurrentPassword, _ := bcrypt.GenerateFromPassword([]byte(currentPassword), bcrypt.DefaultCost)
@@ -178,7 +178,7 @@ func TestUserUsecase_ChangePassword_WrongCurrentPassword(t *testing.T) {
 	mockUserRepo := new(mocks.MockUserRepository)
 	userUsecase := NewUserUsecase(mockUserRepo)
 
-	userID := uint(1)
+	userID := uint64(1)
 	correctPassword := "correctpassword"
 	wrongPassword := "wrongpassword"
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(correctPassword), bcrypt.DefaultCost)

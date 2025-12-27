@@ -8,7 +8,7 @@ import (
 )
 
 type Claims struct {
-	UserID  uint   `json:"user_id"`
+	UserID  uint64 `json:"user_id"`
 	Email   string `json:"email"`
 	IsAdmin bool   `json:"is_admin"`
 	jwt.RegisteredClaims
@@ -28,7 +28,7 @@ func NewJWTManager(secretKey string, accessHours, refreshHours int) *JWTManager 
 	}
 }
 
-func (j *JWTManager) GenerateAccessToken(userID uint, email string, isAdmin bool) (string, error) {
+func (j *JWTManager) GenerateAccessToken(userID uint64, email string, isAdmin bool) (string, error) {
 	claims := Claims{
 		UserID:  userID,
 		Email:   email,
@@ -44,7 +44,7 @@ func (j *JWTManager) GenerateAccessToken(userID uint, email string, isAdmin bool
 	return token.SignedString([]byte(j.secretKey))
 }
 
-func (j *JWTManager) GenerateRefreshToken(userID uint) (string, error) {
+func (j *JWTManager) GenerateRefreshToken(userID uint64) (string, error) {
 	claims := jwt.RegisteredClaims{
 		Subject:   string(rune(userID)),
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(j.refreshTokenDuration)),

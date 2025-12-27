@@ -149,7 +149,7 @@ func TestAuthUsecase_GetUserByID_Success(t *testing.T) {
 		db:         nil,
 	}
 
-	userID := uint(1)
+	userID := uint64(1)
 	user := &domain.User{
 		ID:       userID,
 		Name:     "Test User",
@@ -186,7 +186,7 @@ func TestAuthUsecase_GetUserByID_NotFound(t *testing.T) {
 		db:         nil,
 	}
 
-	userID := uint(999)
+	userID := uint64(999)
 
 	// Mock expectations
 	mockUserRepo.On("GetByID", userID).Return(nil, gorm.ErrRecordNotFound)

@@ -18,7 +18,7 @@ func (r *storeRepository) Create(store *domain.Store) error {
 	return r.db.Create(store).Error
 }
 
-func (r *storeRepository) GetByID(id uint) (*domain.Store, error) {
+func (r *storeRepository) GetByID(id uint64) (*domain.Store, error) {
 	var store domain.Store
 	err := r.db.Preload("User").First(&store, id).Error
 	if err != nil {
@@ -27,9 +27,9 @@ func (r *storeRepository) GetByID(id uint) (*domain.Store, error) {
 	return &store, nil
 }
 
-func (r *storeRepository) GetByUserID(userID uint) (*domain.Store, error) {
+func (r *storeRepository) GetByUserID(userID uint64) (*domain.Store, error) {
 	var store domain.Store
-	err := r.db.Where("user_id = ?", userID).First(&store).Error
+	err := r.db.Where("id_user = ?", userID).First(&store).Error
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ func (r *storeRepository) Update(store *domain.Store) error {
 	return r.db.Save(store).Error
 }
 
-func (r *storeRepository) Delete(id uint) error {
+func (r *storeRepository) Delete(id uint64) error {
 	return r.db.Delete(&domain.Store{}, id).Error
 }
 
@@ -51,7 +51,7 @@ func (r *storeRepository) GetAll(limit, offset int, search string) ([]*domain.St
 	query := r.db.Model(&domain.Store{}).Preload("User")
 	
 	if search != "" {
-		query = query.Where("name LIKE ?", "%"+search+"%")
+		query = query.Where("nama_toko LIKE ?", "%"+search+"%")
 	}
 
 	// Count total

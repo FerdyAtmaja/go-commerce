@@ -48,8 +48,8 @@ func RequireAdmin() fiber.Handler {
 	}
 }
 
-func GetUserID(c *fiber.Ctx) uint {
-	userID, _ := c.Locals("user_id").(uint)
+func GetUserID(c *fiber.Ctx) uint64 {
+	userID, _ := c.Locals("user_id").(uint64)
 	return userID
 }
 

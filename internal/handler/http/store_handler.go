@@ -76,12 +76,12 @@ func (h *StoreHandler) GetAllStores(c *fiber.Ctx) error {
 
 func (h *StoreHandler) GetStoreByID(c *fiber.Ctx) error {
 	idParam := c.Params("id")
-	id, err := strconv.ParseUint(idParam, 10, 32)
+	id, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
 		return response.BadRequest(c, "Invalid store ID")
 	}
 
-	store, err := h.storeUsecase.GetStoreByID(uint(id))
+	store, err := h.storeUsecase.GetStoreByID(id)
 	if err != nil {
 		return response.NotFound(c, err.Error())
 	}

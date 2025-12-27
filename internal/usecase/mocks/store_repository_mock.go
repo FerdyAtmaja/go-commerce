@@ -15,7 +15,7 @@ func (m *MockStoreRepository) Create(store *domain.Store) error {
 	return args.Error(0)
 }
 
-func (m *MockStoreRepository) GetByID(id uint) (*domain.Store, error) {
+func (m *MockStoreRepository) GetByID(id uint64) (*domain.Store, error) {
 	args := m.Called(id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -23,7 +23,7 @@ func (m *MockStoreRepository) GetByID(id uint) (*domain.Store, error) {
 	return args.Get(0).(*domain.Store), args.Error(1)
 }
 
-func (m *MockStoreRepository) GetByUserID(userID uint) (*domain.Store, error) {
+func (m *MockStoreRepository) GetByUserID(userID uint64) (*domain.Store, error) {
 	args := m.Called(userID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -36,7 +36,7 @@ func (m *MockStoreRepository) Update(store *domain.Store) error {
 	return args.Error(0)
 }
 
-func (m *MockStoreRepository) Delete(id uint) error {
+func (m *MockStoreRepository) Delete(id uint64) error {
 	args := m.Called(id)
 	return args.Error(0)
 }

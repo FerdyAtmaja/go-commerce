@@ -15,7 +15,7 @@ func (m *MockUserRepository) Create(user *domain.User) error {
 	return args.Error(0)
 }
 
-func (m *MockUserRepository) GetByID(id uint) (*domain.User, error) {
+func (m *MockUserRepository) GetByID(id uint64) (*domain.User, error) {
 	args := m.Called(id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -44,7 +44,7 @@ func (m *MockUserRepository) Update(user *domain.User) error {
 	return args.Error(0)
 }
 
-func (m *MockUserRepository) Delete(id uint) error {
+func (m *MockUserRepository) Delete(id uint64) error {
 	args := m.Called(id)
 	return args.Error(0)
 }

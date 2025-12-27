@@ -11,7 +11,7 @@ func TestJWTManager_GenerateAccessToken_Success(t *testing.T) {
 	// Setup
 	jwtManager := NewJWTManager("test-secret-key", 24, 168)
 	
-	userID := uint(1)
+	userID := uint64(1)
 	email := "test@example.com"
 	isAdmin := false
 
@@ -27,7 +27,7 @@ func TestJWTManager_GenerateRefreshToken_Success(t *testing.T) {
 	// Setup
 	jwtManager := NewJWTManager("test-secret-key", 24, 168)
 	
-	userID := uint(1)
+	userID := uint64(1)
 
 	// Execute
 	token, err := jwtManager.GenerateRefreshToken(userID)
@@ -41,7 +41,7 @@ func TestJWTManager_ValidateToken_Success(t *testing.T) {
 	// Setup
 	jwtManager := NewJWTManager("test-secret-key", 24, 168)
 	
-	userID := uint(1)
+	userID := uint64(1)
 	email := "test@example.com"
 	isAdmin := true
 
@@ -78,7 +78,7 @@ func TestJWTManager_ValidateToken_ExpiredToken(t *testing.T) {
 	// Setup - Create JWT manager with very short expiration
 	jwtManager := NewJWTManager("test-secret-key", 0, 168) // 0 hours = expired immediately
 	
-	userID := uint(1)
+	userID := uint64(1)
 	email := "test@example.com"
 	isAdmin := false
 
@@ -102,7 +102,7 @@ func TestJWTManager_ValidateToken_WrongSecret(t *testing.T) {
 	jwtManager1 := NewJWTManager("secret-1", 24, 168)
 	jwtManager2 := NewJWTManager("secret-2", 24, 168)
 	
-	userID := uint(1)
+	userID := uint64(1)
 	email := "test@example.com"
 	isAdmin := false
 

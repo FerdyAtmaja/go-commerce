@@ -71,12 +71,12 @@ func (h *AddressHandler) GetAddressByID(c *fiber.Ctx) error {
 	}
 
 	idParam := c.Params("id")
-	addressID, err := strconv.ParseUint(idParam, 10, 32)
+	addressID, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
 		return response.BadRequest(c, "Invalid address ID")
 	}
 
-	address, err := h.addressUsecase.GetAddressByID(uint(addressID), userID)
+	address, err := h.addressUsecase.GetAddressByID(addressID, userID)
 	if err != nil {
 		return response.NotFound(c, err.Error())
 	}
@@ -91,7 +91,7 @@ func (h *AddressHandler) UpdateAddress(c *fiber.Ctx) error {
 	}
 
 	idParam := c.Params("id")
-	addressID, err := strconv.ParseUint(idParam, 10, 32)
+	addressID, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
 		return response.BadRequest(c, "Invalid address ID")
 	}
@@ -105,7 +105,7 @@ func (h *AddressHandler) UpdateAddress(c *fiber.Ctx) error {
 		return response.BadRequest(c, "Validation failed: "+err.Error())
 	}
 
-	address, err := h.addressUsecase.UpdateAddress(uint(addressID), userID, &req)
+	address, err := h.addressUsecase.UpdateAddress(addressID, userID, &req)
 	if err != nil {
 		return response.BadRequest(c, err.Error())
 	}
@@ -120,12 +120,12 @@ func (h *AddressHandler) DeleteAddress(c *fiber.Ctx) error {
 	}
 
 	idParam := c.Params("id")
-	addressID, err := strconv.ParseUint(idParam, 10, 32)
+	addressID, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
 		return response.BadRequest(c, "Invalid address ID")
 	}
 
-	if err := h.addressUsecase.DeleteAddress(uint(addressID), userID); err != nil {
+	if err := h.addressUsecase.DeleteAddress(addressID, userID); err != nil {
 		return response.BadRequest(c, err.Error())
 	}
 

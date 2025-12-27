@@ -55,12 +55,12 @@ func (h *CategoryHandler) GetAllCategories(c *fiber.Ctx) error {
 
 func (h *CategoryHandler) GetCategoryByID(c *fiber.Ctx) error {
 	idParam := c.Params("id")
-	id, err := strconv.ParseUint(idParam, 10, 32)
+	id, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
 		return response.BadRequest(c, "Invalid category ID")
 	}
 
-	category, err := h.categoryUsecase.GetCategoryByID(uint(id))
+	category, err := h.categoryUsecase.GetCategoryByID(id)
 	if err != nil {
 		return response.NotFound(c, err.Error())
 	}
@@ -70,7 +70,7 @@ func (h *CategoryHandler) GetCategoryByID(c *fiber.Ctx) error {
 
 func (h *CategoryHandler) UpdateCategory(c *fiber.Ctx) error {
 	idParam := c.Params("id")
-	id, err := strconv.ParseUint(idParam, 10, 32)
+	id, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
 		return response.BadRequest(c, "Invalid category ID")
 	}
@@ -84,7 +84,7 @@ func (h *CategoryHandler) UpdateCategory(c *fiber.Ctx) error {
 		return response.BadRequest(c, "Validation failed: "+err.Error())
 	}
 
-	category, err := h.categoryUsecase.UpdateCategory(uint(id), &req)
+	category, err := h.categoryUsecase.UpdateCategory(id, &req)
 	if err != nil {
 		return response.BadRequest(c, err.Error())
 	}
@@ -94,12 +94,12 @@ func (h *CategoryHandler) UpdateCategory(c *fiber.Ctx) error {
 
 func (h *CategoryHandler) DeleteCategory(c *fiber.Ctx) error {
 	idParam := c.Params("id")
-	id, err := strconv.ParseUint(idParam, 10, 32)
+	id, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
 		return response.BadRequest(c, "Invalid category ID")
 	}
 
-	if err := h.categoryUsecase.DeleteCategory(uint(id)); err != nil {
+	if err := h.categoryUsecase.DeleteCategory(id); err != nil {
 		return response.BadRequest(c, err.Error())
 	}
 

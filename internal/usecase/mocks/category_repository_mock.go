@@ -15,7 +15,7 @@ func (m *MockCategoryRepository) Create(category *domain.Category) error {
 	return args.Error(0)
 }
 
-func (m *MockCategoryRepository) GetByID(id uint) (*domain.Category, error) {
+func (m *MockCategoryRepository) GetByID(id uint64) (*domain.Category, error) {
 	args := m.Called(id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -36,7 +36,7 @@ func (m *MockCategoryRepository) Update(category *domain.Category) error {
 	return args.Error(0)
 }
 
-func (m *MockCategoryRepository) Delete(id uint) error {
+func (m *MockCategoryRepository) Delete(id uint64) error {
 	args := m.Called(id)
 	return args.Error(0)
 }

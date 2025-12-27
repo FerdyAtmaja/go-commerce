@@ -22,7 +22,7 @@ func NewAddressUsecase(addressRepo domain.AddressRepository, regionService domai
 	}
 }
 
-func (u *AddressUsecase) CreateAddress(userID uint, req *domain.CreateAddressRequest) (*domain.Address, error) {
+func (u *AddressUsecase) CreateAddress(userID uint64, req *domain.CreateAddressRequest) (*domain.Address, error) {
 	// Validate province and city IDs with Indonesia region data
 	if err := u.regionService.ValidateProvinceAndCity(req.ProvinceID, req.CityID); err != nil {
 		return nil, errors.New("invalid province or city: " + err.Error())
@@ -45,7 +45,7 @@ func (u *AddressUsecase) CreateAddress(userID uint, req *domain.CreateAddressReq
 	return address, nil
 }
 
-func (u *AddressUsecase) GetAddressByID(addressID, userID uint) (*domain.Address, error) {
+func (u *AddressUsecase) GetAddressByID(addressID, userID uint64) (*domain.Address, error) {
 	// Check ownership
 	if !u.addressRepo.CheckOwnership(addressID, userID) {
 		return nil, errors.New("address not found or access denied")
@@ -62,7 +62,7 @@ func (u *AddressUsecase) GetAddressByID(addressID, userID uint) (*domain.Address
 	return address, nil
 }
 
-func (u *AddressUsecase) GetMyAddresses(userID uint, page, limit int) ([]*domain.Address, response.PaginationMeta, error) {
+func (u *AddressUsecase) GetMyAddresses(userID uint64, page, limit int) ([]*domain.Address, response.PaginationMeta, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -89,7 +89,7 @@ func (u *AddressUsecase) GetMyAddresses(userID uint, page, limit int) ([]*domain
 	return addresses, meta, nil
 }
 
-func (u *AddressUsecase) UpdateAddress(addressID, userID uint, req *domain.UpdateAddressRequest) (*domain.Address, error) {
+func (u *AddressUsecase) UpdateAddress(addressID, userID uint64, req *domain.UpdateAddressRequest) (*domain.Address, error) {
 	// Check ownership
 	if !u.addressRepo.CheckOwnership(addressID, userID) {
 		return nil, errors.New("address not found or access denied")
@@ -123,7 +123,7 @@ func (u *AddressUsecase) UpdateAddress(addressID, userID uint, req *domain.Updat
 	return address, nil
 }
 
-func (u *AddressUsecase) DeleteAddress(addressID, userID uint) error {
+func (u *AddressUsecase) DeleteAddress(addressID, userID uint64) error {
 	// Check ownership
 	if !u.addressRepo.CheckOwnership(addressID, userID) {
 		return errors.New("address not found or access denied")

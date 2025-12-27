@@ -20,7 +20,7 @@ func NewStoreUsecase(storeRepo domain.StoreRepository) *StoreUsecase {
 	}
 }
 
-func (u *StoreUsecase) CreateStore(userID uint, name string) (*domain.Store, error) {
+func (u *StoreUsecase) CreateStore(userID uint64, name string) (*domain.Store, error) {
 	store := &domain.Store{
 		UserID:      userID,
 		Name:        name,
@@ -34,7 +34,7 @@ func (u *StoreUsecase) CreateStore(userID uint, name string) (*domain.Store, err
 	return store, nil
 }
 
-func (u *StoreUsecase) GetMyStore(userID uint) (*domain.Store, error) {
+func (u *StoreUsecase) GetMyStore(userID uint64) (*domain.Store, error) {
 	store, err := u.storeRepo.GetByUserID(userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -46,7 +46,7 @@ func (u *StoreUsecase) GetMyStore(userID uint) (*domain.Store, error) {
 	return store, nil
 }
 
-func (u *StoreUsecase) UpdateMyStore(userID uint, req *domain.UpdateStoreRequest) (*domain.Store, error) {
+func (u *StoreUsecase) UpdateMyStore(userID uint64, req *domain.UpdateStoreRequest) (*domain.Store, error) {
 	// Get user's store
 	store, err := u.storeRepo.GetByUserID(userID)
 	if err != nil {
@@ -67,7 +67,7 @@ func (u *StoreUsecase) UpdateMyStore(userID uint, req *domain.UpdateStoreRequest
 	return store, nil
 }
 
-func (u *StoreUsecase) UpdateStorePhoto(userID uint, photoURL string) (*domain.Store, error) {
+func (u *StoreUsecase) UpdateStorePhoto(userID uint64, photoURL string) (*domain.Store, error) {
 	store, err := u.storeRepo.GetByUserID(userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -84,7 +84,7 @@ func (u *StoreUsecase) UpdateStorePhoto(userID uint, photoURL string) (*domain.S
 	return store, nil
 }
 
-func (u *StoreUsecase) GetStoreByID(id uint) (*domain.Store, error) {
+func (u *StoreUsecase) GetStoreByID(id uint64) (*domain.Store, error) {
 	store, err := u.storeRepo.GetByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

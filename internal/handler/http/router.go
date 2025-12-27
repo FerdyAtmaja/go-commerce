@@ -98,3 +98,27 @@ func (r *Router) SetupAddressRoutes(addressUsecase *usecase.AddressUsecase) {
 	provinces.Get("/", addressHandler.GetProvinces)
 	provinces.Get("/:provinceId/cities", addressHandler.GetCitiesByProvince)
 }
+
+func (r *Router) SetupProductRoutes(productUsecase *usecase.ProductUsecase) {
+	productHandler := NewProductHandler(productUsecase)
+	
+	api := r.app.Group("/api/v1")
+	products := api.Group("/products")
+
+	// Public routes
+	products.Get("/", productHandler.GetAllProducts)
+	products.Get("/slug/:slug", productHandler.GetProductBySlug)
+	products.Get("/:id", productHandler.GetProductByID)
+
+	// Protected routes (store owner only)
+	jwtMiddleware := middleware.JWTMiddleware(r.jwtManager)
+	products.Get("/my", jwtMiddleware, productHandler.GetMyProducts)
+	products.Post("/", jwtMiddleware, productHandler.CreateProduct)
+	products.Put("/:id", jwtMiddleware, productHandler.UpdateProduct)
+	products.Delete("/:id", jwtMiddleware, productHandler.DeleteProduct)
+
+	// Photo management routes
+	products.Post("/:id/photos", jwtMiddleware, productHandler.UploadProductPhoto)
+	products.Put("/:id/photos/:photoId/primary", jwtMiddleware, productHandler.SetPrimaryPhoto)
+	products.Delete("/:id/photos/:photoId", jwtMiddleware, productHandler.DeleteProductPhoto)
+}

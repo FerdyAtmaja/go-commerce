@@ -18,7 +18,7 @@ func (r *userRepository) Create(user *domain.User) error {
 	return r.db.Create(user).Error
 }
 
-func (r *userRepository) GetByID(id uint) (*domain.User, error) {
+func (r *userRepository) GetByID(id uint64) (*domain.User, error) {
 	var user domain.User
 	err := r.db.First(&user, id).Error
 	if err != nil {
@@ -38,7 +38,7 @@ func (r *userRepository) GetByEmail(email string) (*domain.User, error) {
 
 func (r *userRepository) GetByPhone(phone string) (*domain.User, error) {
 	var user domain.User
-	err := r.db.Where("phone = ?", phone).First(&user).Error
+	err := r.db.Where("notelp = ?", phone).First(&user).Error
 	if err != nil {
 		return nil, err
 	}
@@ -49,6 +49,6 @@ func (r *userRepository) Update(user *domain.User) error {
 	return r.db.Save(user).Error
 }
 
-func (r *userRepository) Delete(id uint) error {
+func (r *userRepository) Delete(id uint64) error {
 	return r.db.Delete(&domain.User{}, id).Error
 }

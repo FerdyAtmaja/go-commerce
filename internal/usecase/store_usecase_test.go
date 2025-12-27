@@ -15,7 +15,7 @@ func TestStoreUsecase_GetMyStore_Success(t *testing.T) {
 	mockStoreRepo := new(mocks.MockStoreRepository)
 	storeUsecase := NewStoreUsecase(mockStoreRepo)
 
-	userID := uint(1)
+	userID := uint64(1)
 	store := &domain.Store{
 		ID:          1,
 		UserID:      userID,
@@ -44,7 +44,7 @@ func TestStoreUsecase_GetMyStore_NotFound(t *testing.T) {
 	mockStoreRepo := new(mocks.MockStoreRepository)
 	storeUsecase := NewStoreUsecase(mockStoreRepo)
 
-	userID := uint(999)
+	userID := uint64(999)
 
 	// Mock expectations
 	mockStoreRepo.On("GetByUserID", userID).Return(nil, gorm.ErrRecordNotFound)
@@ -65,7 +65,7 @@ func TestStoreUsecase_UpdateMyStore_Success(t *testing.T) {
 	mockStoreRepo := new(mocks.MockStoreRepository)
 	storeUsecase := NewStoreUsecase(mockStoreRepo)
 
-	userID := uint(1)
+	userID := uint64(1)
 	existingStore := &domain.Store{
 		ID:          1,
 		UserID:      userID,
@@ -100,7 +100,7 @@ func TestStoreUsecase_GetStoreByID_Success(t *testing.T) {
 	mockStoreRepo := new(mocks.MockStoreRepository)
 	storeUsecase := NewStoreUsecase(mockStoreRepo)
 
-	storeID := uint(1)
+	storeID := uint64(1)
 	store := &domain.Store{
 		ID:          storeID,
 		UserID:      1,
@@ -195,7 +195,7 @@ func TestStoreUsecase_CreateStore_Success(t *testing.T) {
 	mockStoreRepo := new(mocks.MockStoreRepository)
 	storeUsecase := NewStoreUsecase(mockStoreRepo)
 
-	userID := uint(1)
+	userID := uint64(1)
 	storeName := "New Store"
 
 	// Mock expectations

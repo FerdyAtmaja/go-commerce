@@ -7,8 +7,8 @@ import (
 )
 
 type Address struct {
-	ID         uint           `json:"id" gorm:"primaryKey"`
-	UserID     uint           `json:"user_id" gorm:"not null;index"`
+	ID         uint64         `json:"id" gorm:"primaryKey"`
+	UserID     uint64         `json:"user_id" gorm:"not null;index"`
 	Name       string         `json:"name" gorm:"not null" validate:"required,min=2,max=100"`
 	Detail     string         `json:"detail" gorm:"not null" validate:"required"`
 	Phone      string         `json:"phone" gorm:"not null" validate:"required,min=10,max=15"`
@@ -25,11 +25,11 @@ type Address struct {
 
 type AddressRepository interface {
 	Create(address *Address) error
-	GetByID(id uint) (*Address, error)
-	GetByUserID(userID uint, limit, offset int) ([]*Address, int64, error)
+	GetByID(id uint64) (*Address, error)
+	GetByUserID(userID uint64, limit, offset int) ([]*Address, int64, error)
 	Update(address *Address) error
-	Delete(id uint) error
-	CheckOwnership(addressID, userID uint) bool
+	Delete(id uint64) error
+	CheckOwnership(addressID, userID uint64) bool
 }
 
 type CreateAddressRequest struct {

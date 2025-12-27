@@ -38,7 +38,7 @@ func (u *CategoryUsecase) CreateCategory(req *domain.CreateCategoryRequest) (*do
 	return category, nil
 }
 
-func (u *CategoryUsecase) GetCategoryByID(id uint) (*domain.Category, error) {
+func (u *CategoryUsecase) GetCategoryByID(id uint64) (*domain.Category, error) {
 	category, err := u.categoryRepo.GetByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -50,7 +50,7 @@ func (u *CategoryUsecase) GetCategoryByID(id uint) (*domain.Category, error) {
 	return category, nil
 }
 
-func (u *CategoryUsecase) UpdateCategory(id uint, req *domain.UpdateCategoryRequest) (*domain.Category, error) {
+func (u *CategoryUsecase) UpdateCategory(id uint64, req *domain.UpdateCategoryRequest) (*domain.Category, error) {
 	// Get existing category
 	category, err := u.categoryRepo.GetByID(id)
 	if err != nil {
@@ -78,7 +78,7 @@ func (u *CategoryUsecase) UpdateCategory(id uint, req *domain.UpdateCategoryRequ
 	return category, nil
 }
 
-func (u *CategoryUsecase) DeleteCategory(id uint) error {
+func (u *CategoryUsecase) DeleteCategory(id uint64) error {
 	// Check if category exists
 	_, err := u.categoryRepo.GetByID(id)
 	if err != nil {

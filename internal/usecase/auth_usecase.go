@@ -149,7 +149,7 @@ func (u *AuthUsecase) Login(req *domain.LoginRequest) (*domain.AuthResponse, err
 	}, nil
 }
 
-func (u *AuthUsecase) GetUserByID(id uint) (*domain.User, error) {
+func (u *AuthUsecase) GetUserByID(id uint64) (*domain.User, error) {
 	user, err := u.userRepo.GetByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

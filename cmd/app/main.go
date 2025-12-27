@@ -33,7 +33,7 @@ func main() {
 	}
 
 	// Auto migrate
-	if err := db.AutoMigrate(&domain.User{}, &domain.Store{}, &domain.Category{}, &domain.Address{}); err != nil {
+	if err := db.AutoMigrate(&domain.User{}, &domain.Store{}, &domain.Category{}, &domain.Address{}, &domain.Product{}, &domain.PhotoProduk{}); err != nil {
 		log.Fatal("Failed to migrate database:", err)
 	}
 
@@ -45,6 +45,8 @@ func main() {
 	storeRepo := mysql.NewStoreRepository(db)
 	categoryRepo := mysql.NewCategoryRepository(db)
 	addressRepo := mysql.NewAddressRepository(db)
+	productRepo := mysql.NewProductRepository(db)
+	photoRepo := mysql.NewPhotoProdukRepository(db)
 
 	// Initialize services
 	regionService := service.NewIndonesiaRegionService()
@@ -55,6 +57,7 @@ func main() {
 	storeUsecase := usecase.NewStoreUsecase(storeRepo)
 	categoryUsecase := usecase.NewCategoryUsecase(categoryRepo)
 	addressUsecase := usecase.NewAddressUsecase(addressRepo, regionService)
+	productUsecase := usecase.NewProductUsecase(productRepo, photoRepo, storeRepo, categoryRepo)
 
 	// Initialize Fiber app
 	app := fiber.New(fiber.Config{
@@ -79,6 +82,9 @@ func main() {
 		AllowHeaders: "Origin,Content-Type,Accept,Authorization",
 	}))
 
+	// Serve static files for uploads
+	app.Static("/uploads", "./uploads")
+
 	// Health check endpoint
 	app.Get("/health", func(c *fiber.Ctx) error {
 		return response.Success(c, "Server is running", fiber.Map{
@@ -94,6 +100,7 @@ func main() {
 	router.SetupStoreRoutes(storeUsecase)
 	router.SetupCategoryRoutes(categoryUsecase)
 	router.SetupAddressRoutes(addressUsecase)
+	router.SetupProductRoutes(productUsecase)
 
 	// API info endpoint
 	api := app.Group("/api/v1")

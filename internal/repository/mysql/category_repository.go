@@ -18,7 +18,7 @@ func (r *categoryRepository) Create(category *domain.Category) error {
 	return r.db.Create(category).Error
 }
 
-func (r *categoryRepository) GetByID(id uint) (*domain.Category, error) {
+func (r *categoryRepository) GetByID(id uint64) (*domain.Category, error) {
 	var category domain.Category
 	err := r.db.First(&category, id).Error
 	if err != nil {
@@ -29,7 +29,7 @@ func (r *categoryRepository) GetByID(id uint) (*domain.Category, error) {
 
 func (r *categoryRepository) GetByName(name string) (*domain.Category, error) {
 	var category domain.Category
-	err := r.db.Where("name = ?", name).First(&category).Error
+	err := r.db.Where("nama_category = ?", name).First(&category).Error
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ func (r *categoryRepository) Update(category *domain.Category) error {
 	return r.db.Save(category).Error
 }
 
-func (r *categoryRepository) Delete(id uint) error {
+func (r *categoryRepository) Delete(id uint64) error {
 	return r.db.Delete(&domain.Category{}, id).Error
 }
 

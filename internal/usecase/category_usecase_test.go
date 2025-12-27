@@ -73,7 +73,7 @@ func TestCategoryUsecase_GetCategoryByID_Success(t *testing.T) {
 	mockCategoryRepo := new(mocks.MockCategoryRepository)
 	categoryUsecase := NewCategoryUsecase(mockCategoryRepo)
 
-	categoryID := uint(1)
+	categoryID := uint64(1)
 	category := &domain.Category{
 		ID:          categoryID,
 		Name:        "Electronics",
@@ -100,7 +100,7 @@ func TestCategoryUsecase_GetCategoryByID_NotFound(t *testing.T) {
 	mockCategoryRepo := new(mocks.MockCategoryRepository)
 	categoryUsecase := NewCategoryUsecase(mockCategoryRepo)
 
-	categoryID := uint(999)
+	categoryID := uint64(999)
 
 	// Mock expectations
 	mockCategoryRepo.On("GetByID", categoryID).Return(nil, gorm.ErrRecordNotFound)
@@ -121,7 +121,7 @@ func TestCategoryUsecase_UpdateCategory_Success(t *testing.T) {
 	mockCategoryRepo := new(mocks.MockCategoryRepository)
 	categoryUsecase := NewCategoryUsecase(mockCategoryRepo)
 
-	categoryID := uint(1)
+	categoryID := uint64(1)
 	existingCategory := &domain.Category{
 		ID:          categoryID,
 		Name:        "Electronics",
@@ -155,7 +155,7 @@ func TestCategoryUsecase_UpdateCategory_NameAlreadyExists(t *testing.T) {
 	mockCategoryRepo := new(mocks.MockCategoryRepository)
 	categoryUsecase := NewCategoryUsecase(mockCategoryRepo)
 
-	categoryID := uint(1)
+	categoryID := uint64(1)
 	existingCategory := &domain.Category{
 		ID:   categoryID,
 		Name: "Electronics",
@@ -190,7 +190,7 @@ func TestCategoryUsecase_DeleteCategory_Success(t *testing.T) {
 	mockCategoryRepo := new(mocks.MockCategoryRepository)
 	categoryUsecase := NewCategoryUsecase(mockCategoryRepo)
 
-	categoryID := uint(1)
+	categoryID := uint64(1)
 	category := &domain.Category{
 		ID:   categoryID,
 		Name: "Electronics",
