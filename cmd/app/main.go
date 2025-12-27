@@ -10,6 +10,7 @@ import (
 	"go-commerce/internal/handler/http"
 	"go-commerce/internal/handler/response"
 	"go-commerce/internal/repository/mysql"
+	"go-commerce/internal/service"
 	"go-commerce/internal/usecase"
 	"go-commerce/pkg/config"
 	"go-commerce/pkg/database"
@@ -32,7 +33,7 @@ func main() {
 	}
 
 	// Auto migrate
-	if err := db.AutoMigrate(&domain.User{}, &domain.Store{}); err != nil {
+	if err := db.AutoMigrate(&domain.User{}, &domain.Store{}, &domain.Category{}, &domain.Address{}); err != nil {
 		log.Fatal("Failed to migrate database:", err)
 	}
 
@@ -42,11 +43,18 @@ func main() {
 	// Initialize repositories
 	userRepo := mysql.NewUserRepository(db)
 	storeRepo := mysql.NewStoreRepository(db)
+	categoryRepo := mysql.NewCategoryRepository(db)
+	addressRepo := mysql.NewAddressRepository(db)
+
+	// Initialize services
+	regionService := service.NewIndonesiaRegionService()
 
 	// Initialize usecases
 	authUsecase := usecase.NewAuthUsecase(userRepo, storeRepo, jwtManager, db)
 	userUsecase := usecase.NewUserUsecase(userRepo)
 	storeUsecase := usecase.NewStoreUsecase(storeRepo)
+	categoryUsecase := usecase.NewCategoryUsecase(categoryRepo)
+	addressUsecase := usecase.NewAddressUsecase(addressRepo, regionService)
 
 	// Initialize Fiber app
 	app := fiber.New(fiber.Config{
@@ -84,6 +92,8 @@ func main() {
 	router.SetupAuthRoutes(authUsecase)
 	router.SetupUserRoutes(userUsecase)
 	router.SetupStoreRoutes(storeUsecase)
+	router.SetupCategoryRoutes(categoryUsecase)
+	router.SetupAddressRoutes(addressUsecase)
 
 	// API info endpoint
 	api := app.Group("/api/v1")

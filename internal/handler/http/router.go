@@ -60,3 +60,41 @@ func (r *Router) SetupStoreRoutes(storeUsecase *usecase.StoreUsecase) {
 	stores.Get("/my", middleware.JWTMiddleware(r.jwtManager), storeHandler.GetMyStore)
 	stores.Put("/my", middleware.JWTMiddleware(r.jwtManager), storeHandler.UpdateMyStore)
 }
+
+func (r *Router) SetupCategoryRoutes(categoryUsecase *usecase.CategoryUsecase) {
+	categoryHandler := NewCategoryHandler(categoryUsecase)
+	
+	api := r.app.Group("/api/v1")
+	categories := api.Group("/categories")
+
+	// Public routes
+	categories.Get("/", categoryHandler.GetAllCategories)
+	categories.Get("/:id", categoryHandler.GetCategoryByID)
+
+	// Admin only routes
+	adminMiddleware := middleware.JWTMiddleware(r.jwtManager)
+	requireAdmin := middleware.RequireAdmin()
+	categories.Post("/", adminMiddleware, requireAdmin, categoryHandler.CreateCategory)
+	categories.Put("/:id", adminMiddleware, requireAdmin, categoryHandler.UpdateCategory)
+	categories.Delete("/:id", adminMiddleware, requireAdmin, categoryHandler.DeleteCategory)
+}
+
+func (r *Router) SetupAddressRoutes(addressUsecase *usecase.AddressUsecase) {
+	addressHandler := NewAddressHandler(addressUsecase)
+	
+	api := r.app.Group("/api/v1")
+	addresses := api.Group("/addresses")
+
+	// Protected routes (user can only manage their own addresses)
+	jwtMiddleware := middleware.JWTMiddleware(r.jwtManager)
+	addresses.Get("/", jwtMiddleware, addressHandler.GetMyAddresses)
+	addresses.Post("/", jwtMiddleware, addressHandler.CreateAddress)
+	addresses.Get("/:id", jwtMiddleware, addressHandler.GetAddressByID)
+	addresses.Put("/:id", jwtMiddleware, addressHandler.UpdateAddress)
+	addresses.Delete("/:id", jwtMiddleware, addressHandler.DeleteAddress)
+
+	// Utility routes for Indonesia regions
+	provinces := api.Group("/provinces")
+	provinces.Get("/", addressHandler.GetProvinces)
+	provinces.Get("/:provinceId/cities", addressHandler.GetCitiesByProvince)
+}
