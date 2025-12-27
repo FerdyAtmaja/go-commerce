@@ -12,14 +12,18 @@ import (
 )
 
 type AuthUsecase struct {
-	userRepo   domain.UserRepository
-	jwtManager *jwt.JWTManager
+	userRepo    domain.UserRepository
+	storeRepo   domain.StoreRepository
+	jwtManager  *jwt.JWTManager
+	db          *gorm.DB
 }
 
-func NewAuthUsecase(userRepo domain.UserRepository, jwtManager *jwt.JWTManager) *AuthUsecase {
+func NewAuthUsecase(userRepo domain.UserRepository, storeRepo domain.StoreRepository, jwtManager *jwt.JWTManager, db *gorm.DB) *AuthUsecase {
 	return &AuthUsecase{
 		userRepo:   userRepo,
+		storeRepo:  storeRepo,
 		jwtManager: jwtManager,
+		db:         db,
 	}
 }
 
@@ -48,6 +52,14 @@ func (u *AuthUsecase) Register(req *domain.RegisterRequest) (*domain.AuthRespons
 		}
 	}
 
+	// Start database transaction
+	tx := u.db.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
 	// Create user
 	user := &domain.User{
 		Name:        req.Name,
@@ -58,8 +70,26 @@ func (u *AuthUsecase) Register(req *domain.RegisterRequest) (*domain.AuthRespons
 		IsAdmin:     false,
 	}
 
-	if err := u.userRepo.Create(user); err != nil {
+	if err := tx.Create(user).Error; err != nil {
+		tx.Rollback()
 		return nil, errors.New("failed to create user")
+	}
+
+	// Auto create store
+	store := &domain.Store{
+		UserID:      user.ID,
+		Name:        req.Name + "'s Store",
+		Description: "Welcome to " + req.Name + "'s Store",
+	}
+
+	if err := tx.Create(store).Error; err != nil {
+		tx.Rollback()
+		return nil, errors.New("failed to create store")
+	}
+
+	// Commit transaction
+	if err := tx.Commit().Error; err != nil {
+		return nil, errors.New("failed to complete registration")
 	}
 
 	// Generate tokens

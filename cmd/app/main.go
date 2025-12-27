@@ -32,7 +32,7 @@ func main() {
 	}
 
 	// Auto migrate
-	if err := db.AutoMigrate(&domain.User{}); err != nil {
+	if err := db.AutoMigrate(&domain.User{}, &domain.Store{}); err != nil {
 		log.Fatal("Failed to migrate database:", err)
 	}
 
@@ -41,9 +41,12 @@ func main() {
 
 	// Initialize repositories
 	userRepo := mysql.NewUserRepository(db)
+	storeRepo := mysql.NewStoreRepository(db)
 
 	// Initialize usecases
-	authUsecase := usecase.NewAuthUsecase(userRepo, jwtManager)
+	authUsecase := usecase.NewAuthUsecase(userRepo, storeRepo, jwtManager, db)
+	userUsecase := usecase.NewUserUsecase(userRepo)
+	storeUsecase := usecase.NewStoreUsecase(storeRepo)
 
 	// Initialize Fiber app
 	app := fiber.New(fiber.Config{
@@ -79,6 +82,8 @@ func main() {
 	// Setup routes
 	router := http.NewRouter(app, jwtManager)
 	router.SetupAuthRoutes(authUsecase)
+	router.SetupUserRoutes(userUsecase)
+	router.SetupStoreRoutes(storeUsecase)
 
 	// API info endpoint
 	api := app.Group("/api/v1")

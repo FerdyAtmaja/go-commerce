@@ -32,8 +32,31 @@ func (r *Router) SetupAuthRoutes(authUsecase *usecase.AuthUsecase) {
 
 	// Protected routes
 	auth.Post("/logout", middleware.JWTMiddleware(r.jwtManager), authHandler.Logout)
+}
+
+func (r *Router) SetupUserRoutes(userUsecase *usecase.UserUsecase) {
+	userHandler := NewUserHandler(userUsecase)
 	
-	// User profile routes
+	api := r.app.Group("/api/v1")
 	users := api.Group("/users")
-	users.Get("/my", middleware.JWTMiddleware(r.jwtManager), authHandler.GetProfile)
+
+	// Protected routes
+	users.Get("/my", middleware.JWTMiddleware(r.jwtManager), userHandler.GetProfile)
+	users.Put("/my", middleware.JWTMiddleware(r.jwtManager), userHandler.UpdateProfile)
+	users.Put("/my/password", middleware.JWTMiddleware(r.jwtManager), userHandler.ChangePassword)
+}
+
+func (r *Router) SetupStoreRoutes(storeUsecase *usecase.StoreUsecase) {
+	storeHandler := NewStoreHandler(storeUsecase)
+	
+	api := r.app.Group("/api/v1")
+	stores := api.Group("/stores")
+
+	// Public routes
+	stores.Get("/", storeHandler.GetAllStores)
+	stores.Get("/:id", storeHandler.GetStoreByID)
+
+	// Protected routes
+	stores.Get("/my", middleware.JWTMiddleware(r.jwtManager), storeHandler.GetMyStore)
+	stores.Put("/my", middleware.JWTMiddleware(r.jwtManager), storeHandler.UpdateMyStore)
 }

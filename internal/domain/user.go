@@ -51,3 +51,14 @@ type AuthResponse struct {
 type RefreshTokenRequest struct {
 	RefreshToken string `json:"refresh_token" validate:"required"`
 }
+
+type UpdateProfileRequest struct {
+	Name        string `json:"name" validate:"required,min=2,max=100"`
+	Phone       string `json:"phone" validate:"required,min=10,max=15"`
+	DateOfBirth string `json:"date_of_birth,omitempty"`
+}
+
+type ChangePasswordRequest struct {
+	CurrentPassword string `json:"current_password" validate:"required"`
+	NewPassword     string `json:"new_password" validate:"required,min=6"`
+}
