@@ -64,6 +64,63 @@ definitions:
     required:
     - name
     type: object
+  domain.ChangePasswordRequest:
+    properties:
+      current_password:
+        type: string
+      new_password:
+        minLength: 6
+        type: string
+    required:
+    - current_password
+    - new_password
+    type: object
+  domain.City:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      province_id:
+        type: string
+    type: object
+  domain.CreateAddressRequest:
+    properties:
+      city_id:
+        type: string
+      detail:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      phone:
+        maxLength: 15
+        minLength: 10
+        type: string
+      postal_code:
+        type: string
+      province_id:
+        type: string
+    required:
+    - city_id
+    - detail
+    - name
+    - phone
+    - postal_code
+    - province_id
+    type: object
+  domain.CreateCategoryRequest:
+    properties:
+      description:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+    required:
+    - name
+    type: object
   domain.CreateProductRequest:
     properties:
       berat:
@@ -224,6 +281,13 @@ definitions:
       updated_at:
         type: string
     type: object
+  domain.Province:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    type: object
   domain.RegisterRequest:
     properties:
       date_of_birth:
@@ -340,6 +404,98 @@ definitions:
       updated_at:
         type: string
     type: object
+  domain.UpdateAddressRequest:
+    properties:
+      city_id:
+        type: string
+      detail:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      phone:
+        maxLength: 15
+        minLength: 10
+        type: string
+      postal_code:
+        type: string
+      province_id:
+        type: string
+    required:
+    - city_id
+    - detail
+    - name
+    - phone
+    - postal_code
+    - province_id
+    type: object
+  domain.UpdateCategoryRequest:
+    properties:
+      description:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+    required:
+    - name
+    type: object
+  domain.UpdateProductRequest:
+    properties:
+      berat:
+        minimum: 0
+        type: integer
+      deskripsi:
+        type: string
+      harga_konsumen:
+        minimum: 0
+        type: number
+      harga_reseller:
+        minimum: 0
+        type: number
+      id_category:
+        type: integer
+      nama_produk:
+        maxLength: 255
+        minLength: 2
+        type: string
+      stok:
+        minimum: 0
+        type: integer
+    required:
+    - harga_konsumen
+    - harga_reseller
+    - id_category
+    - nama_produk
+    type: object
+  domain.UpdateProfileRequest:
+    properties:
+      date_of_birth:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      phone:
+        maxLength: 15
+        minLength: 10
+        type: string
+    required:
+    - name
+    - phone
+    type: object
+  domain.UpdateStoreRequest:
+    properties:
+      description:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+    required:
+    - name
+    type: object
   domain.User:
     properties:
       about:
@@ -428,6 +584,204 @@ info:
   title: Go Commerce API
   version: "1.0"
 paths:
+  /addresses:
+    get:
+      consumes:
+      - application/json
+      description: Get all addresses for the authenticated user with pagination
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Addresses retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.PaginatedResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/domain.Address'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get current user's addresses
+      tags:
+      - Addresses
+    post:
+      consumes:
+      - application/json
+      description: Create a new address for the authenticated user
+      parameters:
+      - description: Address creation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CreateAddressRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Address created successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.Address'
+              type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Create a new address
+      tags:
+      - Addresses
+  /addresses/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an existing address (owner only)
+      parameters:
+      - description: Address ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Address deleted successfully
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Address not found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Delete an address
+      tags:
+      - Addresses
+    get:
+      consumes:
+      - application/json
+      description: Get a single address by its ID (owner only)
+      parameters:
+      - description: Address ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Address retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.Address'
+              type: object
+        "400":
+          description: Invalid address ID
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Address not found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get address by ID
+      tags:
+      - Addresses
+    put:
+      consumes:
+      - application/json
+      description: Update an existing address (owner only)
+      parameters:
+      - description: Address ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Address update request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.UpdateAddressRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Address updated successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.Address'
+              type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Address not found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Update an address
+      tags:
+      - Addresses
   /auth/login:
     post:
       consumes:
@@ -507,6 +861,196 @@ paths:
       summary: Register a new user
       tags:
       - Authentication
+  /categories:
+    get:
+      consumes:
+      - application/json
+      description: Get all product categories with pagination (public endpoint)
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Categories retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.PaginatedResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/domain.Category'
+                  type: array
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get all categories
+      tags:
+      - Categories
+    post:
+      consumes:
+      - application/json
+      description: Create a new product category (admin only)
+      parameters:
+      - description: Category creation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CreateCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Category created successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.Category'
+              type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden - admin only
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Create a new category
+      tags:
+      - Categories
+  /categories/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an existing category (admin only)
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Category deleted successfully
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden - admin only
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Delete a category
+      tags:
+      - Categories
+    get:
+      consumes:
+      - application/json
+      description: Get a single category by its ID (public endpoint)
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Category retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.Category'
+              type: object
+        "400":
+          description: Invalid category ID
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Category not found
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get category by ID
+      tags:
+      - Categories
+    put:
+      consumes:
+      - application/json
+      description: Update an existing category (admin only)
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Category update request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.UpdateCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Category updated successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.Category'
+              type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden - admin only
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Update a category
+      tags:
+      - Categories
   /products:
     get:
       consumes:
@@ -594,6 +1138,40 @@ paths:
       tags:
       - Products
   /products/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an existing product (owner only)
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Product deleted successfully
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden - not product owner
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Delete a product
+      tags:
+      - Products
     get:
       consumes:
       - application/json
@@ -627,6 +1205,466 @@ paths:
       summary: Get product by ID
       tags:
       - Products
+    put:
+      consumes:
+      - application/json
+      description: Update an existing product (owner only)
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Product update request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.UpdateProductRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Product updated successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.Product'
+              type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden - not product owner
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Update a product
+      tags:
+      - Products
+  /products/{id}/photos:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload a photo for a product (owner only)
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Photo file (JPG, JPEG, PNG, max 5MB)
+        in: formData
+        name: photo
+        required: true
+        type: file
+      - default: false
+        description: Set as primary photo
+        in: formData
+        name: is_primary
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Photo uploaded successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.PhotoProduk'
+              type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden - not product owner
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Upload product photo
+      tags:
+      - Products
+  /products/{id}/photos/{photoId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a photo from a product (owner only)
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Photo ID
+        in: path
+        name: photoId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Photo deleted successfully
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden - not product owner
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Delete product photo
+      tags:
+      - Products
+  /products/{id}/photos/{photoId}/primary:
+    put:
+      consumes:
+      - application/json
+      description: Set a photo as the primary photo for a product (owner only)
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Photo ID
+        in: path
+        name: photoId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Primary photo set successfully
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden - not product owner
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Set primary photo
+      tags:
+      - Products
+  /products/my:
+    get:
+      consumes:
+      - application/json
+      description: Get all products owned by the authenticated user with pagination
+        and search
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Search by product name
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Products retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.PaginatedResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/domain.Product'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get current user's products
+      tags:
+      - Products
+  /products/slug/{slug}:
+    get:
+      consumes:
+      - application/json
+      description: Get a single product by its slug (public endpoint)
+      parameters:
+      - description: Product slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Product retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.Product'
+              type: object
+        "400":
+          description: Invalid slug
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Product not found
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get product by slug
+      tags:
+      - Products
+  /regions/provinces:
+    get:
+      consumes:
+      - application/json
+      description: Get all provinces in Indonesia (public endpoint)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Provinces retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/domain.Province'
+                  type: array
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get all provinces
+      tags:
+      - Regions
+  /regions/provinces/{provinceId}/cities:
+    get:
+      consumes:
+      - application/json
+      description: Get all cities in a specific province (public endpoint)
+      parameters:
+      - description: Province ID
+        in: path
+        name: provinceId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Cities retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/domain.City'
+                  type: array
+              type: object
+        "400":
+          description: Province ID is required
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get cities by province
+      tags:
+      - Regions
+  /stores:
+    get:
+      consumes:
+      - application/json
+      description: Get all stores with pagination and search (public endpoint)
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Search by store name
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Stores retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.PaginatedResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/domain.Store'
+                  type: array
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get all stores
+      tags:
+      - Stores
+  /stores/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get a single store by its ID (public endpoint)
+      parameters:
+      - description: Store ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Store retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.Store'
+              type: object
+        "400":
+          description: Invalid store ID
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Store not found
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get store by ID
+      tags:
+      - Stores
+  /stores/my:
+    get:
+      consumes:
+      - application/json
+      description: Get store information for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Store retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.Store'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Store not found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get current user's store
+      tags:
+      - Stores
+    put:
+      consumes:
+      - application/json
+      description: Update store information for the authenticated user
+      parameters:
+      - description: Store update request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.UpdateStoreRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Store updated successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.Store'
+              type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Update current user's store
+      tags:
+      - Stores
   /transactions:
     post:
       consumes:
@@ -747,6 +1785,38 @@ paths:
       summary: Get my transactions
       tags:
       - Transactions
+  /users/change-password:
+    put:
+      consumes:
+      - application/json
+      description: Change current user password
+      parameters:
+      - description: Password change request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.ChangePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Password changed successfully
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Change user password
+      tags:
+      - Users
   /users/my:
     get:
       consumes:
@@ -777,6 +1847,72 @@ paths:
       summary: Get user profile
       tags:
       - Authentication
+  /users/profile:
+    get:
+      consumes:
+      - application/json
+      description: Get current user profile information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Profile retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.User'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get user profile
+      tags:
+      - Users
+    put:
+      consumes:
+      - application/json
+      description: Update current user profile information
+      parameters:
+      - description: Profile update request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Profile updated successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.User'
+              type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Update user profile
+      tags:
+      - Users
 securityDefinitions:
   BearerAuth:
     description: Type "Bearer" followed by a space and JWT token.

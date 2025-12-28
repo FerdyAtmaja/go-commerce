@@ -22,6 +22,17 @@ func NewUserHandler(userUsecase *usecase.UserUsecase) *UserHandler {
 	}
 }
 
+// GetProfile godoc
+// @Summary Get user profile
+// @Description Get current user profile information
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} response.Response{data=domain.User} "Profile retrieved successfully"
+// @Failure 401 {object} response.Response "Unauthorized"
+// @Failure 404 {object} response.Response "User not found"
+// @Router /users/profile [get]
 func (h *UserHandler) GetProfile(c *fiber.Ctx) error {
 	userID := middleware.GetUserID(c)
 	if userID == 0 {
@@ -36,6 +47,18 @@ func (h *UserHandler) GetProfile(c *fiber.Ctx) error {
 	return response.Success(c, "Profile retrieved successfully", user)
 }
 
+// UpdateProfile godoc
+// @Summary Update user profile
+// @Description Update current user profile information
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body domain.UpdateProfileRequest true "Profile update request"
+// @Success 200 {object} response.Response{data=domain.User} "Profile updated successfully"
+// @Failure 400 {object} response.Response "Bad request"
+// @Failure 401 {object} response.Response "Unauthorized"
+// @Router /users/profile [put]
 func (h *UserHandler) UpdateProfile(c *fiber.Ctx) error {
 	userID := middleware.GetUserID(c)
 	if userID == 0 {
@@ -59,6 +82,18 @@ func (h *UserHandler) UpdateProfile(c *fiber.Ctx) error {
 	return response.Success(c, "Profile updated successfully", user)
 }
 
+// ChangePassword godoc
+// @Summary Change user password
+// @Description Change current user password
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body domain.ChangePasswordRequest true "Password change request"
+// @Success 200 {object} response.Response "Password changed successfully"
+// @Failure 400 {object} response.Response "Bad request"
+// @Failure 401 {object} response.Response "Unauthorized"
+// @Router /users/change-password [put]
 func (h *UserHandler) ChangePassword(c *fiber.Ctx) error {
 	userID := middleware.GetUserID(c)
 	if userID == 0 {

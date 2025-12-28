@@ -23,6 +23,19 @@ func NewCategoryHandler(categoryUsecase *usecase.CategoryUsecase) *CategoryHandl
 	}
 }
 
+// CreateCategory godoc
+// @Summary Create a new category
+// @Description Create a new product category (admin only)
+// @Tags Categories
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body domain.CreateCategoryRequest true "Category creation request"
+// @Success 201 {object} response.Response{data=domain.Category} "Category created successfully"
+// @Failure 400 {object} response.Response "Bad request"
+// @Failure 401 {object} response.Response "Unauthorized"
+// @Failure 403 {object} response.Response "Forbidden - admin only"
+// @Router /categories [post]
 func (h *CategoryHandler) CreateCategory(c *fiber.Ctx) error {
 	var req domain.CreateCategoryRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -41,6 +54,17 @@ func (h *CategoryHandler) CreateCategory(c *fiber.Ctx) error {
 	return response.Created(c, "Category created successfully", category)
 }
 
+// GetAllCategories godoc
+// @Summary Get all categories
+// @Description Get all product categories with pagination (public endpoint)
+// @Tags Categories
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number" default(1)
+// @Param limit query int false "Items per page" default(10)
+// @Success 200 {object} response.PaginatedResponse{data=[]domain.Category} "Categories retrieved successfully"
+// @Failure 500 {object} response.Response "Internal server error"
+// @Router /categories [get]
 func (h *CategoryHandler) GetAllCategories(c *fiber.Ctx) error {
 	page, _ := strconv.Atoi(c.Query("page", "1"))
 	limit, _ := strconv.Atoi(c.Query("limit", "10"))
@@ -53,6 +77,17 @@ func (h *CategoryHandler) GetAllCategories(c *fiber.Ctx) error {
 	return response.Paginated(c, "Categories retrieved successfully", categories, meta)
 }
 
+// GetCategoryByID godoc
+// @Summary Get category by ID
+// @Description Get a single category by its ID (public endpoint)
+// @Tags Categories
+// @Accept json
+// @Produce json
+// @Param id path int true "Category ID"
+// @Success 200 {object} response.Response{data=domain.Category} "Category retrieved successfully"
+// @Failure 400 {object} response.Response "Invalid category ID"
+// @Failure 404 {object} response.Response "Category not found"
+// @Router /categories/{id} [get]
 func (h *CategoryHandler) GetCategoryByID(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	id, err := strconv.ParseUint(idParam, 10, 64)
@@ -68,6 +103,20 @@ func (h *CategoryHandler) GetCategoryByID(c *fiber.Ctx) error {
 	return response.Success(c, "Category retrieved successfully", category)
 }
 
+// UpdateCategory godoc
+// @Summary Update a category
+// @Description Update an existing category (admin only)
+// @Tags Categories
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Category ID"
+// @Param request body domain.UpdateCategoryRequest true "Category update request"
+// @Success 200 {object} response.Response{data=domain.Category} "Category updated successfully"
+// @Failure 400 {object} response.Response "Bad request"
+// @Failure 401 {object} response.Response "Unauthorized"
+// @Failure 403 {object} response.Response "Forbidden - admin only"
+// @Router /categories/{id} [put]
 func (h *CategoryHandler) UpdateCategory(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	id, err := strconv.ParseUint(idParam, 10, 64)
@@ -92,6 +141,19 @@ func (h *CategoryHandler) UpdateCategory(c *fiber.Ctx) error {
 	return response.Success(c, "Category updated successfully", category)
 }
 
+// DeleteCategory godoc
+// @Summary Delete a category
+// @Description Delete an existing category (admin only)
+// @Tags Categories
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Category ID"
+// @Success 200 {object} response.Response "Category deleted successfully"
+// @Failure 400 {object} response.Response "Bad request"
+// @Failure 401 {object} response.Response "Unauthorized"
+// @Failure 403 {object} response.Response "Forbidden - admin only"
+// @Router /categories/{id} [delete]
 func (h *CategoryHandler) DeleteCategory(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	id, err := strconv.ParseUint(idParam, 10, 64)

@@ -24,6 +24,18 @@ func NewAddressHandler(addressUsecase *usecase.AddressUsecase) *AddressHandler {
 	}
 }
 
+// CreateAddress godoc
+// @Summary Create a new address
+// @Description Create a new address for the authenticated user
+// @Tags Addresses
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body domain.CreateAddressRequest true "Address creation request"
+// @Success 201 {object} response.Response{data=domain.Address} "Address created successfully"
+// @Failure 400 {object} response.Response "Bad request"
+// @Failure 401 {object} response.Response "Unauthorized"
+// @Router /addresses [post]
 func (h *AddressHandler) CreateAddress(c *fiber.Ctx) error {
 	userID := middleware.GetUserID(c)
 	if userID == 0 {
@@ -47,6 +59,19 @@ func (h *AddressHandler) CreateAddress(c *fiber.Ctx) error {
 	return response.Created(c, "Address created successfully", address)
 }
 
+// GetMyAddresses godoc
+// @Summary Get current user's addresses
+// @Description Get all addresses for the authenticated user with pagination
+// @Tags Addresses
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "Page number" default(1)
+// @Param limit query int false "Items per page" default(10)
+// @Success 200 {object} response.PaginatedResponse{data=[]domain.Address} "Addresses retrieved successfully"
+// @Failure 401 {object} response.Response "Unauthorized"
+// @Failure 500 {object} response.Response "Internal server error"
+// @Router /addresses [get]
 func (h *AddressHandler) GetMyAddresses(c *fiber.Ctx) error {
 	userID := middleware.GetUserID(c)
 	if userID == 0 {
@@ -64,6 +89,19 @@ func (h *AddressHandler) GetMyAddresses(c *fiber.Ctx) error {
 	return response.Paginated(c, "Addresses retrieved successfully", addresses, meta)
 }
 
+// GetAddressByID godoc
+// @Summary Get address by ID
+// @Description Get a single address by its ID (owner only)
+// @Tags Addresses
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Address ID"
+// @Success 200 {object} response.Response{data=domain.Address} "Address retrieved successfully"
+// @Failure 400 {object} response.Response "Invalid address ID"
+// @Failure 401 {object} response.Response "Unauthorized"
+// @Failure 404 {object} response.Response "Address not found"
+// @Router /addresses/{id} [get]
 func (h *AddressHandler) GetAddressByID(c *fiber.Ctx) error {
 	userID := middleware.GetUserID(c)
 	if userID == 0 {
@@ -84,6 +122,20 @@ func (h *AddressHandler) GetAddressByID(c *fiber.Ctx) error {
 	return response.Success(c, "Address retrieved successfully", address)
 }
 
+// UpdateAddress godoc
+// @Summary Update an address
+// @Description Update an existing address (owner only)
+// @Tags Addresses
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Address ID"
+// @Param request body domain.UpdateAddressRequest true "Address update request"
+// @Success 200 {object} response.Response{data=domain.Address} "Address updated successfully"
+// @Failure 400 {object} response.Response "Bad request"
+// @Failure 401 {object} response.Response "Unauthorized"
+// @Failure 404 {object} response.Response "Address not found"
+// @Router /addresses/{id} [put]
 func (h *AddressHandler) UpdateAddress(c *fiber.Ctx) error {
 	userID := middleware.GetUserID(c)
 	if userID == 0 {
@@ -113,6 +165,19 @@ func (h *AddressHandler) UpdateAddress(c *fiber.Ctx) error {
 	return response.Success(c, "Address updated successfully", address)
 }
 
+// DeleteAddress godoc
+// @Summary Delete an address
+// @Description Delete an existing address (owner only)
+// @Tags Addresses
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Address ID"
+// @Success 200 {object} response.Response "Address deleted successfully"
+// @Failure 400 {object} response.Response "Bad request"
+// @Failure 401 {object} response.Response "Unauthorized"
+// @Failure 404 {object} response.Response "Address not found"
+// @Router /addresses/{id} [delete]
 func (h *AddressHandler) DeleteAddress(c *fiber.Ctx) error {
 	userID := middleware.GetUserID(c)
 	if userID == 0 {
@@ -132,7 +197,15 @@ func (h *AddressHandler) DeleteAddress(c *fiber.Ctx) error {
 	return response.Success(c, "Address deleted successfully", nil)
 }
 
-// Indonesia region endpoints
+// GetProvinces godoc
+// @Summary Get all provinces
+// @Description Get all provinces in Indonesia (public endpoint)
+// @Tags Regions
+// @Accept json
+// @Produce json
+// @Success 200 {object} response.Response{data=[]domain.Province} "Provinces retrieved successfully"
+// @Failure 500 {object} response.Response "Internal server error"
+// @Router /regions/provinces [get]
 func (h *AddressHandler) GetProvinces(c *fiber.Ctx) error {
 	provinces, err := h.addressUsecase.GetProvinces()
 	if err != nil {
@@ -142,6 +215,17 @@ func (h *AddressHandler) GetProvinces(c *fiber.Ctx) error {
 	return response.Success(c, "Provinces retrieved successfully", provinces)
 }
 
+// GetCitiesByProvince godoc
+// @Summary Get cities by province
+// @Description Get all cities in a specific province (public endpoint)
+// @Tags Regions
+// @Accept json
+// @Produce json
+// @Param provinceId path string true "Province ID"
+// @Success 200 {object} response.Response{data=[]domain.City} "Cities retrieved successfully"
+// @Failure 400 {object} response.Response "Province ID is required"
+// @Failure 500 {object} response.Response "Internal server error"
+// @Router /regions/provinces/{provinceId}/cities [get]
 func (h *AddressHandler) GetCitiesByProvince(c *fiber.Ctx) error {
 	provinceID := c.Params("provinceId")
 	if provinceID == "" {

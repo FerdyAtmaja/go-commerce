@@ -22,7 +22,7 @@ func NewRouter(app *fiber.App, jwtManager *jwt.JWTManager) *Router {
 
 func (r *Router) SetupAuthRoutes(authUsecase *usecase.AuthUsecase) {
 	authHandler := NewAuthHandler(authUsecase)
-	
+
 	api := r.app.Group("/api/v1")
 	auth := api.Group("/auth")
 
@@ -36,19 +36,19 @@ func (r *Router) SetupAuthRoutes(authUsecase *usecase.AuthUsecase) {
 
 func (r *Router) SetupUserRoutes(userUsecase *usecase.UserUsecase) {
 	userHandler := NewUserHandler(userUsecase)
-	
+
 	api := r.app.Group("/api/v1")
 	users := api.Group("/users")
 
 	// Protected routes
-	users.Get("/my", middleware.JWTMiddleware(r.jwtManager), userHandler.GetProfile)
-	users.Put("/my", middleware.JWTMiddleware(r.jwtManager), userHandler.UpdateProfile)
-	users.Put("/my/password", middleware.JWTMiddleware(r.jwtManager), userHandler.ChangePassword)
+	users.Get("/profile", middleware.JWTMiddleware(r.jwtManager), userHandler.GetProfile)
+	users.Put("/profile", middleware.JWTMiddleware(r.jwtManager), userHandler.UpdateProfile)
+	users.Put("/change-password", middleware.JWTMiddleware(r.jwtManager), userHandler.ChangePassword)
 }
 
 func (r *Router) SetupStoreRoutes(storeUsecase *usecase.StoreUsecase) {
 	storeHandler := NewStoreHandler(storeUsecase)
-	
+
 	api := r.app.Group("/api/v1")
 	stores := api.Group("/stores")
 
@@ -63,7 +63,7 @@ func (r *Router) SetupStoreRoutes(storeUsecase *usecase.StoreUsecase) {
 
 func (r *Router) SetupCategoryRoutes(categoryUsecase *usecase.CategoryUsecase) {
 	categoryHandler := NewCategoryHandler(categoryUsecase)
-	
+
 	api := r.app.Group("/api/v1")
 	categories := api.Group("/categories")
 
@@ -81,7 +81,7 @@ func (r *Router) SetupCategoryRoutes(categoryUsecase *usecase.CategoryUsecase) {
 
 func (r *Router) SetupAddressRoutes(addressUsecase *usecase.AddressUsecase) {
 	addressHandler := NewAddressHandler(addressUsecase)
-	
+
 	api := r.app.Group("/api/v1")
 	addresses := api.Group("/addresses")
 
@@ -93,15 +93,16 @@ func (r *Router) SetupAddressRoutes(addressUsecase *usecase.AddressUsecase) {
 	addresses.Put("/:id", jwtMiddleware, addressHandler.UpdateAddress)
 	addresses.Delete("/:id", jwtMiddleware, addressHandler.DeleteAddress)
 
-	// Utility routes for Indonesia regions
-	provinces := api.Group("/provinces")
+	// Region routes
+	regions := api.Group("/regions")
+	provinces := regions.Group("/provinces")
 	provinces.Get("/", addressHandler.GetProvinces)
 	provinces.Get("/:provinceId/cities", addressHandler.GetCitiesByProvince)
 }
 
 func (r *Router) SetupProductRoutes(productUsecase *usecase.ProductUsecase) {
 	productHandler := NewProductHandler(productUsecase)
-	
+
 	api := r.app.Group("/api/v1")
 	products := api.Group("/products")
 
@@ -125,7 +126,7 @@ func (r *Router) SetupProductRoutes(productUsecase *usecase.ProductUsecase) {
 
 func (r *Router) SetupTransactionRoutes(transactionUsecase *usecase.TransactionUsecase) {
 	transactionHandler := NewTransactionHandler(transactionUsecase)
-	
+
 	api := r.app.Group("/api/v1")
 	transactions := api.Group("/transactions")
 

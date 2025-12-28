@@ -61,7 +61,20 @@ func (h *ProductHandler) CreateProduct(c *fiber.Ctx) error {
 	return response.Created(c, "Product created successfully", product)
 }
 
-// GetMyProducts gets current user's products
+// GetMyProducts godoc
+// @Summary Get current user's products
+// @Description Get all products owned by the authenticated user with pagination and search
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "Page number" default(1)
+// @Param limit query int false "Items per page" default(10)
+// @Param search query string false "Search by product name"
+// @Success 200 {object} response.PaginatedResponse{data=[]domain.Product} "Products retrieved successfully"
+// @Failure 401 {object} response.Response "Unauthorized"
+// @Failure 500 {object} response.Response "Internal server error"
+// @Router /products/my [get]
 func (h *ProductHandler) GetMyProducts(c *fiber.Ctx) error {
 	page, _ := strconv.Atoi(c.Query("page", "1"))
 	limit, _ := strconv.Atoi(c.Query("limit", "10"))
@@ -147,7 +160,17 @@ func (h *ProductHandler) GetProductByID(c *fiber.Ctx) error {
 	return response.Success(c, "Product retrieved successfully", product)
 }
 
-// GetProductBySlug gets product by slug
+// GetProductBySlug godoc
+// @Summary Get product by slug
+// @Description Get a single product by its slug (public endpoint)
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Param slug path string true "Product slug"
+// @Success 200 {object} response.Response{data=domain.Product} "Product retrieved successfully"
+// @Failure 400 {object} response.Response "Invalid slug"
+// @Failure 404 {object} response.Response "Product not found"
+// @Router /products/slug/{slug} [get]
 func (h *ProductHandler) GetProductBySlug(c *fiber.Ctx) error {
 	slug := c.Params("slug")
 	if slug == "" {
@@ -162,7 +185,20 @@ func (h *ProductHandler) GetProductBySlug(c *fiber.Ctx) error {
 	return response.Success(c, "Product retrieved successfully", product)
 }
 
-// UpdateProduct updates a product
+// UpdateProduct godoc
+// @Summary Update a product
+// @Description Update an existing product (owner only)
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Product ID"
+// @Param request body domain.UpdateProductRequest true "Product update request"
+// @Success 200 {object} response.Response{data=domain.Product} "Product updated successfully"
+// @Failure 400 {object} response.Response "Bad request"
+// @Failure 401 {object} response.Response "Unauthorized"
+// @Failure 403 {object} response.Response "Forbidden - not product owner"
+// @Router /products/{id} [put]
 func (h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 	id, err := strconv.ParseUint(c.Params("id"), 10, 64)
 	if err != nil {
@@ -187,7 +223,19 @@ func (h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 	return response.Success(c, "Product updated successfully", product)
 }
 
-// DeleteProduct deletes a product
+// DeleteProduct godoc
+// @Summary Delete a product
+// @Description Delete an existing product (owner only)
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Product ID"
+// @Success 200 {object} response.Response "Product deleted successfully"
+// @Failure 400 {object} response.Response "Bad request"
+// @Failure 401 {object} response.Response "Unauthorized"
+// @Failure 403 {object} response.Response "Forbidden - not product owner"
+// @Router /products/{id} [delete]
 func (h *ProductHandler) DeleteProduct(c *fiber.Ctx) error {
 	id, err := strconv.ParseUint(c.Params("id"), 10, 64)
 	if err != nil {
@@ -203,7 +251,21 @@ func (h *ProductHandler) DeleteProduct(c *fiber.Ctx) error {
 	return response.Success(c, "Product deleted successfully", nil)
 }
 
-// UploadProductPhoto uploads product photo
+// UploadProductPhoto godoc
+// @Summary Upload product photo
+// @Description Upload a photo for a product (owner only)
+// @Tags Products
+// @Accept multipart/form-data
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Product ID"
+// @Param photo formData file true "Photo file (JPG, JPEG, PNG, max 5MB)"
+// @Param is_primary formData boolean false "Set as primary photo" default(false)
+// @Success 201 {object} response.Response{data=domain.PhotoProduk} "Photo uploaded successfully"
+// @Failure 400 {object} response.Response "Bad request"
+// @Failure 401 {object} response.Response "Unauthorized"
+// @Failure 403 {object} response.Response "Forbidden - not product owner"
+// @Router /products/{id}/photos [post]
 func (h *ProductHandler) UploadProductPhoto(c *fiber.Ctx) error {
 	productID, err := strconv.ParseUint(c.Params("id"), 10, 64)
 	if err != nil {
@@ -258,7 +320,20 @@ func (h *ProductHandler) UploadProductPhoto(c *fiber.Ctx) error {
 	return response.Created(c, "Photo uploaded successfully", photo)
 }
 
-// SetPrimaryPhoto sets a photo as primary
+// SetPrimaryPhoto godoc
+// @Summary Set primary photo
+// @Description Set a photo as the primary photo for a product (owner only)
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Product ID"
+// @Param photoId path int true "Photo ID"
+// @Success 200 {object} response.Response "Primary photo set successfully"
+// @Failure 400 {object} response.Response "Bad request"
+// @Failure 401 {object} response.Response "Unauthorized"
+// @Failure 403 {object} response.Response "Forbidden - not product owner"
+// @Router /products/{id}/photos/{photoId}/primary [put]
 func (h *ProductHandler) SetPrimaryPhoto(c *fiber.Ctx) error {
 	productID, err := strconv.ParseUint(c.Params("id"), 10, 64)
 	if err != nil {
@@ -279,7 +354,20 @@ func (h *ProductHandler) SetPrimaryPhoto(c *fiber.Ctx) error {
 	return response.Success(c, "Primary photo set successfully", nil)
 }
 
-// DeleteProductPhoto deletes a product photo
+// DeleteProductPhoto godoc
+// @Summary Delete product photo
+// @Description Delete a photo from a product (owner only)
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Product ID"
+// @Param photoId path int true "Photo ID"
+// @Success 200 {object} response.Response "Photo deleted successfully"
+// @Failure 400 {object} response.Response "Bad request"
+// @Failure 401 {object} response.Response "Unauthorized"
+// @Failure 403 {object} response.Response "Forbidden - not product owner"
+// @Router /products/{id}/photos/{photoId} [delete]
 func (h *ProductHandler) DeleteProductPhoto(c *fiber.Ctx) error {
 	productID, err := strconv.ParseUint(c.Params("id"), 10, 64)
 	if err != nil {
