@@ -49,15 +49,25 @@ definitions:
     type: object
   domain.Category:
     properties:
+      children:
+        items:
+          $ref: '#/definitions/domain.Category'
+        type: array
       created_at:
-        type: string
-      description:
         type: string
       id:
         type: integer
       name:
         maxLength: 100
         minLength: 2
+        type: string
+      parent:
+        allOf:
+        - $ref: '#/definitions/domain.Category'
+        description: Relations
+      parent_id:
+        type: integer
+      slug:
         type: string
       updated_at:
         type: string
@@ -112,12 +122,12 @@ definitions:
     type: object
   domain.CreateCategoryRequest:
     properties:
-      description:
-        type: string
       name:
         maxLength: 100
         minLength: 2
         type: string
+      parent_id:
+        type: integer
     required:
     - name
     type: object
@@ -323,13 +333,13 @@ definitions:
         maxLength: 100
         minLength: 2
         type: string
-      photo_url:
-        type: string
       rating:
         type: number
       status:
         type: string
       updated_at:
+        type: string
+      url_fotol:
         type: string
       user:
         allOf:
@@ -432,12 +442,12 @@ definitions:
     type: object
   domain.UpdateCategoryRequest:
     properties:
-      description:
-        type: string
       name:
         maxLength: 100
         minLength: 2
         type: string
+      parent_id:
+        type: integer
     required:
     - name
     type: object
@@ -471,7 +481,18 @@ definitions:
     type: object
   domain.UpdateProfileRequest:
     properties:
+      about:
+        type: string
+      city_id:
+        type: integer
       date_of_birth:
+        type: string
+      gender:
+        enum:
+        - L
+        - P
+        type: string
+      job:
         type: string
       name:
         maxLength: 100
@@ -481,9 +502,8 @@ definitions:
         maxLength: 15
         minLength: 10
         type: string
-    required:
-    - name
-    - phone
+      province_id:
+        type: integer
     type: object
   domain.UpdateStoreRequest:
     properties:
@@ -527,8 +547,6 @@ definitions:
       phone:
         maxLength: 15
         minLength: 10
-        type: string
-      photo_url:
         type: string
       province_id:
         type: integer
@@ -1817,36 +1835,6 @@ paths:
       summary: Change user password
       tags:
       - Users
-  /users/my:
-    get:
-      consumes:
-      - application/json
-      description: Get current user profile information
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Profile retrieved successfully
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/domain.User'
-              type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/response.Response'
-        "404":
-          description: User not found
-          schema:
-            $ref: '#/definitions/response.Response'
-      security:
-      - BearerAuth: []
-      summary: Get user profile
-      tags:
-      - Authentication
   /users/profile:
     get:
       consumes:

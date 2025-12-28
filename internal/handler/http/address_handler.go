@@ -197,6 +197,63 @@ func (h *AddressHandler) DeleteAddress(c *fiber.Ctx) error {
 	return response.Success(c, "Address deleted successfully", nil)
 }
 
+// SetDefaultAddress godoc
+// @Summary Set default address
+// @Description Set an address as default for the authenticated user
+// @Tags Addresses
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Address ID"
+// @Success 200 {object} response.Response "Default address set successfully"
+// @Failure 400 {object} response.Response "Bad request"
+// @Failure 401 {object} response.Response "Unauthorized"
+// @Failure 404 {object} response.Response "Address not found"
+// @Router /addresses/{id}/default [put]
+func (h *AddressHandler) SetDefaultAddress(c *fiber.Ctx) error {
+	userID := middleware.GetUserID(c)
+	if userID == 0 {
+		return response.Unauthorized(c, "User not authenticated")
+	}
+
+	idParam := c.Params("id")
+	addressID, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		return response.BadRequest(c, "Invalid address ID")
+	}
+
+	if err := h.addressUsecase.SetDefaultAddress(addressID, userID); err != nil {
+		return response.BadRequest(c, err.Error())
+	}
+
+	return response.Success(c, "Default address set successfully", nil)
+}
+
+// GetDefaultAddress godoc
+// @Summary Get default address
+// @Description Get the default address for the authenticated user
+// @Tags Addresses
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} response.Response{data=domain.Address} "Default address retrieved successfully"
+// @Failure 401 {object} response.Response "Unauthorized"
+// @Failure 404 {object} response.Response "No default address found"
+// @Router /addresses/default [get]
+func (h *AddressHandler) GetDefaultAddress(c *fiber.Ctx) error {
+	userID := middleware.GetUserID(c)
+	if userID == 0 {
+		return response.Unauthorized(c, "User not authenticated")
+	}
+
+	address, err := h.addressUsecase.GetDefaultAddress(userID)
+	if err != nil {
+		return response.NotFound(c, err.Error())
+	}
+
+	return response.Success(c, "Default address retrieved successfully", address)
+}
+
 // GetProvinces godoc
 // @Summary Get all provinces
 // @Description Get all provinces in Indonesia (public endpoint)

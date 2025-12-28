@@ -20,7 +20,7 @@ func (r *categoryRepository) Create(category *domain.Category) error {
 
 func (r *categoryRepository) GetByID(id uint64) (*domain.Category, error) {
 	var category domain.Category
-	err := r.db.First(&category, id).Error
+	err := r.db.Preload("Parent").Preload("Children").First(&category, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -30,6 +30,15 @@ func (r *categoryRepository) GetByID(id uint64) (*domain.Category, error) {
 func (r *categoryRepository) GetByName(name string) (*domain.Category, error) {
 	var category domain.Category
 	err := r.db.Where("nama_category = ?", name).First(&category).Error
+	if err != nil {
+		return nil, err
+	}
+	return &category, nil
+}
+
+func (r *categoryRepository) GetBySlug(slug string) (*domain.Category, error) {
+	var category domain.Category
+	err := r.db.Preload("Parent").Preload("Children").Where("slug = ?", slug).First(&category).Error
 	if err != nil {
 		return nil, err
 	}
@@ -53,10 +62,36 @@ func (r *categoryRepository) GetAll(limit, offset int) ([]*domain.Category, int6
 		return nil, 0, err
 	}
 
-	// Get data with pagination
-	if err := r.db.Limit(limit).Offset(offset).Find(&categories).Error; err != nil {
+	// Get data with pagination and preload relations
+	if err := r.db.Preload("Parent").Preload("Children").Limit(limit).Offset(offset).Find(&categories).Error; err != nil {
 		return nil, 0, err
 	}
 
 	return categories, total, nil
+}
+
+func (r *categoryRepository) GetRootCategories(limit, offset int) ([]*domain.Category, int64, error) {
+	var categories []*domain.Category
+	var total int64
+
+	// Count total root categories (parent_id IS NULL)
+	if err := r.db.Model(&domain.Category{}).Where("parent_id IS NULL").Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Get root categories with their children
+	if err := r.db.Preload("Children").Where("parent_id IS NULL").Limit(limit).Offset(offset).Find(&categories).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return categories, total, nil
+}
+
+func (r *categoryRepository) GetChildrenByParentID(parentID uint64) ([]*domain.Category, error) {
+	var categories []*domain.Category
+	err := r.db.Where("parent_id = ?", parentID).Find(&categories).Error
+	if err != nil {
+		return nil, err
+	}
+	return categories, nil
 }

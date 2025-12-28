@@ -5,7 +5,7 @@ import (
 )
 
 type Transaction struct {
-	ID                uint64    `json:"id" gorm:"primaryKey;autoIncrement;table:trx"`
+	ID                uint64    `json:"id" gorm:"primaryKey;autoIncrement"`
 	UserID            uint64    `json:"user_id" gorm:"column:id_user;not null"`
 	AlamatPengiriman  uint64    `json:"alamat_pengiriman" gorm:"column:alamat_pengiriman;not null"`
 	HargaTotal        float64   `json:"harga_total" gorm:"column:harga_total;not null"`
@@ -22,8 +22,12 @@ type Transaction struct {
 	TransactionItems []*TransactionItem `json:"transaction_items,omitempty" gorm:"foreignKey:TransactionID;references:ID"`
 }
 
+func (Transaction) TableName() string {
+	return "trx"
+}
+
 type TransactionItem struct {
-	ID                   uint64    `json:"id" gorm:"primaryKey;autoIncrement;table:detail_trx"`
+	ID                   uint64    `json:"id" gorm:"primaryKey;autoIncrement"`
 	TransactionID        uint64    `json:"transaction_id" gorm:"column:id_trx;not null"`
 	ProductLogID         uint64    `json:"product_log_id" gorm:"column:id_log_produk;not null"`
 	StoreID              uint64    `json:"store_id" gorm:"column:id_toko;not null"`
@@ -40,6 +44,10 @@ type TransactionItem struct {
 	Store       *Store       `json:"store,omitempty" gorm:"foreignKey:StoreID;references:ID"`
 }
 
+func (TransactionItem) TableName() string {
+	return "detail_trx"
+}
+
 type ProductLog struct {
 	ID             uint64    `json:"id" gorm:"primaryKey;autoIncrement"`
 	ProductID      uint64    `json:"product_id" gorm:"column:id_produk;not null"`
@@ -52,6 +60,10 @@ type ProductLog struct {
 	CategoryID     uint64    `json:"category_id" gorm:"column:id_category;not null"`
 	CreatedAt      time.Time `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt      time.Time `json:"updated_at" gorm:"autoUpdateTime"`
+}
+
+func (ProductLog) TableName() string {
+	return "log_produk"
 }
 
 // Request DTOs

@@ -10,7 +10,7 @@ type User struct {
 	ID              uint64         `json:"id" gorm:"primaryKey"`
 	Name            string         `json:"name" gorm:"column:nama;not null" validate:"required,min=2,max=100"`
 	Email           string         `json:"email" gorm:"uniqueIndex;not null" validate:"required,email"`
-	Phone           string         `json:"phone" gorm:"column:notelp;uniqueIndex;not null" validate:"required,min=10,max=15"`
+	Phone           string         `json:"phone" gorm:"column:notelp;uniqueIndex" validate:"required,min=10,max=15"`
 	Password        string         `json:"-" gorm:"column:kata_sandi;not null" validate:"required,min=6"`
 	DateOfBirth     *time.Time     `json:"date_of_birth" gorm:"column:tanggal_lahir"`
 	Gender          string         `json:"gender" gorm:"column:jenis_kelamin"`
@@ -18,7 +18,6 @@ type User struct {
 	Job             string         `json:"job" gorm:"column:pekerjaan"`
 	ProvinceID      *uint64        `json:"province_id" gorm:"column:id_provinsi"`
 	CityID          *uint64        `json:"city_id" gorm:"column:id_kota"`
-	PhotoURL        string         `json:"photo_url"`
 	IsAdmin         bool           `json:"is_admin" gorm:"default:false"`
 	EmailVerifiedAt *time.Time     `json:"email_verified_at"`
 	LastLoginAt     *time.Time     `json:"last_login_at"`
@@ -26,6 +25,10 @@ type User struct {
 	CreatedAt       time.Time      `json:"created_at"`
 	UpdatedAt       time.Time      `json:"updated_at"`
 	DeletedAt       gorm.DeletedAt `json:"-" gorm:"index"`
+}
+
+func (User) TableName() string {
+	return "users"
 }
 
 type UserRepository interface {
@@ -61,9 +64,14 @@ type RefreshTokenRequest struct {
 }
 
 type UpdateProfileRequest struct {
-	Name        string `json:"name" validate:"required,min=2,max=100"`
-	Phone       string `json:"phone" validate:"required,min=10,max=15"`
-	DateOfBirth string `json:"date_of_birth,omitempty"`
+	Name        string  `json:"name,omitempty" validate:"omitempty,min=2,max=100"`
+	Phone       string  `json:"phone,omitempty" validate:"omitempty,min=10,max=15"`
+	DateOfBirth string  `json:"date_of_birth,omitempty"`
+	Gender      string  `json:"gender,omitempty" validate:"omitempty,oneof=L P"`
+	About       string  `json:"about,omitempty"`
+	Job         string  `json:"job,omitempty"`
+	ProvinceID  *uint64 `json:"province_id,omitempty"`
+	CityID      *uint64 `json:"city_id,omitempty"`
 }
 
 type ChangePasswordRequest struct {

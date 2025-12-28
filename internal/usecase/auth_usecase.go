@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"errors"
+	"log"
 	"time"
 
 	"go-commerce/internal/domain"
@@ -72,6 +73,7 @@ func (u *AuthUsecase) Register(req *domain.RegisterRequest) (*domain.AuthRespons
 
 	if err := tx.Create(user).Error; err != nil {
 		tx.Rollback()
+		log.Printf("Error creating user: %v", err)
 		return nil, errors.New("failed to create user")
 	}
 
@@ -84,6 +86,7 @@ func (u *AuthUsecase) Register(req *domain.RegisterRequest) (*domain.AuthRespons
 
 	if err := tx.Create(store).Error; err != nil {
 		tx.Rollback()
+		log.Printf("Error creating store: %v", err)
 		return nil, errors.New("failed to create store")
 	}
 

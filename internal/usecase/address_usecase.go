@@ -23,23 +23,32 @@ func NewAddressUsecase(addressRepo domain.AddressRepository, regionService domai
 }
 
 func (u *AddressUsecase) CreateAddress(userID uint64, req *domain.CreateAddressRequest) (*domain.Address, error) {
-	// Validate province and city IDs with Indonesia region data
-	if err := u.regionService.ValidateProvinceAndCity(req.ProvinceID, req.CityID); err != nil {
-		return nil, errors.New("invalid province or city: " + err.Error())
-	}
-	
 	address := &domain.Address{
-		UserID:     userID,
-		Name:       req.Name,
-		Detail:     req.Detail,
-		Phone:      req.Phone,
-		ProvinceID: req.ProvinceID,
-		CityID:     req.CityID,
-		PostalCode: req.PostalCode,
+		UserID:       userID,
+		JudulAlamat:  req.JudulAlamat,
+		NamaPenerima: req.NamaPenerima,
+		NoTelp:       req.NoTelp,
+		DetailAlamat: req.DetailAlamat,
+		KodePos:      req.KodePos,
+		IsDefault:    req.IsDefault,
+	}
+
+	// If this is set as default, unset other default addresses
+	if req.IsDefault {
+		if err := u.addressRepo.SetDefault(0, userID); err != nil {
+			// Continue even if this fails
+		}
 	}
 
 	if err := u.addressRepo.Create(address); err != nil {
 		return nil, errors.New("failed to create address")
+	}
+
+	// Set as default after creation if requested
+	if req.IsDefault {
+		if err := u.addressRepo.SetDefault(address.ID, userID); err != nil {
+			// Log error but don't fail the creation
+		}
 	}
 
 	return address, nil
@@ -103,18 +112,21 @@ func (u *AddressUsecase) UpdateAddress(addressID, userID uint64, req *domain.Upd
 		return nil, errors.New("failed to get address")
 	}
 
-	// Validate province and city IDs with Indonesia region data
-	if err := u.regionService.ValidateProvinceAndCity(req.ProvinceID, req.CityID); err != nil {
-		return nil, errors.New("invalid province or city: " + err.Error())
-	}
-
 	// Update address fields
-	address.Name = req.Name
-	address.Detail = req.Detail
-	address.Phone = req.Phone
-	address.ProvinceID = req.ProvinceID
-	address.CityID = req.CityID
-	address.PostalCode = req.PostalCode
+	address.JudulAlamat = req.JudulAlamat
+	address.NamaPenerima = req.NamaPenerima
+	address.NoTelp = req.NoTelp
+	address.DetailAlamat = req.DetailAlamat
+	address.KodePos = req.KodePos
+	address.IsDefault = req.IsDefault
+
+	// Handle default address logic
+	if req.IsDefault && !address.IsDefault {
+		// Setting as new default
+		if err := u.addressRepo.SetDefault(addressID, userID); err != nil {
+			return nil, errors.New("failed to set default address")
+		}
+	}
 
 	if err := u.addressRepo.Update(address); err != nil {
 		return nil, errors.New("failed to update address")
@@ -134,6 +146,31 @@ func (u *AddressUsecase) DeleteAddress(addressID, userID uint64) error {
 	}
 
 	return nil
+}
+
+func (u *AddressUsecase) SetDefaultAddress(addressID, userID uint64) error {
+	// Check ownership
+	if !u.addressRepo.CheckOwnership(addressID, userID) {
+		return errors.New("address not found or access denied")
+	}
+
+	if err := u.addressRepo.SetDefault(addressID, userID); err != nil {
+		return errors.New("failed to set default address")
+	}
+
+	return nil
+}
+
+func (u *AddressUsecase) GetDefaultAddress(userID uint64) (*domain.Address, error) {
+	address, err := u.addressRepo.GetDefaultByUserID(userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("no default address found")
+		}
+		return nil, errors.New("failed to get default address")
+	}
+
+	return address, nil
 }
 
 func (u *AddressUsecase) GetProvinces() ([]*domain.Province, error) {

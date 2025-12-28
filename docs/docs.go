@@ -2043,58 +2043,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/my": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Get current user profile information",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Authentication"
-                ],
-                "summary": "Get user profile",
-                "responses": {
-                    "200": {
-                        "description": "Profile retrieved successfully",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/response.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/domain.User"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    },
-                    "404": {
-                        "description": "User not found",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    }
-                }
-            }
-        },
         "/users/profile": {
             "get": {
                 "security": [
@@ -2285,10 +2233,13 @@ const docTemplate = `{
                 "name"
             ],
             "properties": {
-                "created_at": {
-                    "type": "string"
+                "children": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.Category"
+                    }
                 },
-                "description": {
+                "created_at": {
                     "type": "string"
                 },
                 "id": {
@@ -2298,6 +2249,20 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 100,
                     "minLength": 2
+                },
+                "parent": {
+                    "description": "Relations",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/domain.Category"
+                        }
+                    ]
+                },
+                "parent_id": {
+                    "type": "integer"
+                },
+                "slug": {
+                    "type": "string"
                 },
                 "updated_at": {
                     "type": "string"
@@ -2375,13 +2340,13 @@ const docTemplate = `{
                 "name"
             ],
             "properties": {
-                "description": {
-                    "type": "string"
-                },
                 "name": {
                     "type": "string",
                     "maxLength": 100,
                     "minLength": 2
+                },
+                "parent_id": {
+                    "type": "integer"
                 }
             }
         },
@@ -2684,9 +2649,6 @@ const docTemplate = `{
                     "maxLength": 100,
                     "minLength": 2
                 },
-                "photo_url": {
-                    "type": "string"
-                },
                 "rating": {
                     "type": "number"
                 },
@@ -2694,6 +2656,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updated_at": {
+                    "type": "string"
+                },
+                "url_fotol": {
                     "type": "string"
                 },
                 "user": {
@@ -2851,13 +2816,13 @@ const docTemplate = `{
                 "name"
             ],
             "properties": {
-                "description": {
-                    "type": "string"
-                },
                 "name": {
                     "type": "string",
                     "maxLength": 100,
                     "minLength": 2
+                },
+                "parent_id": {
+                    "type": "integer"
                 }
             }
         },
@@ -2901,12 +2866,24 @@ const docTemplate = `{
         },
         "domain.UpdateProfileRequest": {
             "type": "object",
-            "required": [
-                "name",
-                "phone"
-            ],
             "properties": {
+                "about": {
+                    "type": "string"
+                },
+                "city_id": {
+                    "type": "integer"
+                },
                 "date_of_birth": {
+                    "type": "string"
+                },
+                "gender": {
+                    "type": "string",
+                    "enum": [
+                        "L",
+                        "P"
+                    ]
+                },
+                "job": {
                     "type": "string"
                 },
                 "name": {
@@ -2918,6 +2895,9 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 15,
                     "minLength": 10
+                },
+                "province_id": {
+                    "type": "integer"
                 }
             }
         },
@@ -2987,9 +2967,6 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 15,
                     "minLength": 10
-                },
-                "photo_url": {
-                    "type": "string"
                 },
                 "province_id": {
                     "type": "integer"

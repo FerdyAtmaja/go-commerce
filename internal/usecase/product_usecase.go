@@ -3,9 +3,9 @@ package usecase
 import (
 	"errors"
 	"fmt"
-	"strings"
 
 	"go-commerce/internal/domain"
+	"go-commerce/pkg/utils"
 )
 
 type ProductUsecase struct {
@@ -43,7 +43,7 @@ func (u *ProductUsecase) CreateProduct(userID uint64, req *domain.CreateProductR
 	}
 
 	// Generate slug from product name
-	slug := generateSlug(req.NamaProduk)
+	slug := utils.GenerateSlug(req.NamaProduk)
 	
 	// Check if slug already exists, if yes, append number
 	originalSlug := slug
@@ -169,7 +169,7 @@ func (u *ProductUsecase) UpdateProduct(userID, productID uint64, req *domain.Upd
 
 	// Update slug if name changed
 	if nameChanged {
-		newSlug := generateSlug(req.NamaProduk)
+		newSlug := utils.GenerateSlug(req.NamaProduk)
 		
 		// Check if new slug conflicts with existing products (excluding current product)
 		existingProduct, err := u.productRepo.GetBySlug(newSlug)
@@ -289,22 +289,3 @@ func (u *ProductUsecase) DeleteProductPhoto(userID, productID, photoID uint64) e
 	return u.photoRepo.Delete(photoID)
 }
 
-// Helper function to generate slug from product name
-func generateSlug(name string) string {
-	// Convert to lowercase
-	slug := strings.ToLower(name)
-	
-	// Replace spaces and special characters with hyphens
-	slug = strings.ReplaceAll(slug, " ", "-")
-	slug = strings.ReplaceAll(slug, "_", "-")
-	
-	// Remove multiple consecutive hyphens
-	for strings.Contains(slug, "--") {
-		slug = strings.ReplaceAll(slug, "--", "-")
-	}
-	
-	// Trim hyphens from start and end
-	slug = strings.Trim(slug, "-")
-	
-	return slug
-}

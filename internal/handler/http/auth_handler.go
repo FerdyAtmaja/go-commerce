@@ -2,7 +2,6 @@ package http
 
 import (
 	"go-commerce/internal/domain"
-	"go-commerce/internal/handler/middleware"
 	"go-commerce/internal/handler/response"
 	"go-commerce/internal/usecase"
 
@@ -76,31 +75,6 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	}
 
 	return response.Success(c, "Login successful", authResponse)
-}
-
-// GetProfile godoc
-// @Summary Get user profile
-// @Description Get current user profile information
-// @Tags Authentication
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Success 200 {object} response.Response{data=domain.User} "Profile retrieved successfully"
-// @Failure 401 {object} response.Response "Unauthorized"
-// @Failure 404 {object} response.Response "User not found"
-// @Router /users/my [get]
-func (h *AuthHandler) GetProfile(c *fiber.Ctx) error {
-	userID := middleware.GetUserID(c)
-	if userID == 0 {
-		return response.Unauthorized(c, "User not authenticated")
-	}
-
-	user, err := h.authUsecase.GetUserByID(userID)
-	if err != nil {
-		return response.NotFound(c, err.Error())
-	}
-
-	return response.Success(c, "Profile retrieved successfully", user)
 }
 
 // Logout godoc

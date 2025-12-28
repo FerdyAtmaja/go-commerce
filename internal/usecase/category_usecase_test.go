@@ -7,6 +7,7 @@ import (
 	"go-commerce/internal/usecase/mocks"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"gorm.io/gorm"
 )
 
@@ -16,16 +17,14 @@ func TestCategoryUsecase_CreateCategory_Success(t *testing.T) {
 	categoryUsecase := NewCategoryUsecase(mockCategoryRepo)
 
 	req := &domain.CreateCategoryRequest{
-		Name:        "Electronics",
-		Description: "Electronic products",
+		Name: "Electronics",
 	}
 
 	// Mock expectations
 	mockCategoryRepo.On("GetByName", req.Name).Return(nil, gorm.ErrRecordNotFound) // Name not exists
-	mockCategoryRepo.On("Create", &domain.Category{
-		Name:        req.Name,
-		Description: req.Description,
-	}).Return(nil)
+	mockCategoryRepo.On("Create", mock.MatchedBy(func(category *domain.Category) bool {
+		return category.Name == req.Name && category.Slug == "electronics"
+	})).Return(nil)
 
 	// Execute
 	result, err := categoryUsecase.CreateCategory(req)
@@ -34,7 +33,7 @@ func TestCategoryUsecase_CreateCategory_Success(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, req.Name, result.Name)
-	assert.Equal(t, req.Description, result.Description)
+	assert.Equal(t, "electronics", result.Slug)
 
 	mockCategoryRepo.AssertExpectations(t)
 }
@@ -45,13 +44,13 @@ func TestCategoryUsecase_CreateCategory_NameAlreadyExists(t *testing.T) {
 	categoryUsecase := NewCategoryUsecase(mockCategoryRepo)
 
 	req := &domain.CreateCategoryRequest{
-		Name:        "Electronics",
-		Description: "Electronic products",
+		Name: "Electronics",
 	}
 
 	existingCategory := &domain.Category{
 		ID:   1,
 		Name: req.Name,
+		Slug: "electronics",
 	}
 
 	// Mock expectations
@@ -75,9 +74,9 @@ func TestCategoryUsecase_GetCategoryByID_Success(t *testing.T) {
 
 	categoryID := uint64(1)
 	category := &domain.Category{
-		ID:          categoryID,
-		Name:        "Electronics",
-		Description: "Electronic products",
+		ID:   categoryID,
+		Name: "Electronics",
+		Slug: "electronics",
 	}
 
 	// Mock expectations
@@ -123,20 +122,21 @@ func TestCategoryUsecase_UpdateCategory_Success(t *testing.T) {
 
 	categoryID := uint64(1)
 	existingCategory := &domain.Category{
-		ID:          categoryID,
-		Name:        "Electronics",
-		Description: "Old description",
+		ID:   categoryID,
+		Name: "Electronics",
+		Slug: "electronics",
 	}
 
 	req := &domain.UpdateCategoryRequest{
-		Name:        "Updated Electronics",
-		Description: "Updated description",
+		Name: "Updated Electronics",
 	}
 
 	// Mock expectations
 	mockCategoryRepo.On("GetByID", categoryID).Return(existingCategory, nil)
 	mockCategoryRepo.On("GetByName", req.Name).Return(nil, gorm.ErrRecordNotFound) // New name not exists
-	mockCategoryRepo.On("Update", existingCategory).Return(nil)
+	mockCategoryRepo.On("Update", mock.MatchedBy(func(category *domain.Category) bool {
+		return category.Name == req.Name && category.Slug == "updated-electronics"
+	})).Return(nil)
 
 	// Execute
 	result, err := categoryUsecase.UpdateCategory(categoryID, req)
@@ -145,7 +145,7 @@ func TestCategoryUsecase_UpdateCategory_Success(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, req.Name, result.Name)
-	assert.Equal(t, req.Description, result.Description)
+	assert.Equal(t, "updated-electronics", result.Slug)
 
 	mockCategoryRepo.AssertExpectations(t)
 }
@@ -159,11 +159,13 @@ func TestCategoryUsecase_UpdateCategory_NameAlreadyExists(t *testing.T) {
 	existingCategory := &domain.Category{
 		ID:   categoryID,
 		Name: "Electronics",
+		Slug: "electronics",
 	}
 
 	anotherCategory := &domain.Category{
 		ID:   2,
 		Name: "Clothing",
+		Slug: "clothing",
 	}
 
 	req := &domain.UpdateCategoryRequest{
@@ -238,6 +240,95 @@ func TestCategoryUsecase_GetAllCategories_Success(t *testing.T) {
 	assert.Equal(t, limit, meta.Limit)
 	assert.Equal(t, total, meta.Total)
 	assert.Equal(t, 1, meta.TotalPage)
+
+	mockCategoryRepo.AssertExpectations(t)
+}
+
+func TestCategoryUsecase_GetCategoryBySlug_Success(t *testing.T) {
+	// Setup
+	mockCategoryRepo := new(mocks.MockCategoryRepository)
+	categoryUsecase := NewCategoryUsecase(mockCategoryRepo)
+
+	slug := "electronics"
+	category := &domain.Category{
+		ID:   1,
+		Name: "Electronics",
+		Slug: slug,
+	}
+
+	// Mock expectations
+	mockCategoryRepo.On("GetBySlug", slug).Return(category, nil)
+
+	// Execute
+	result, err := categoryUsecase.GetCategoryBySlug(slug)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Equal(t, category.Slug, result.Slug)
+
+	mockCategoryRepo.AssertExpectations(t)
+}
+
+func TestCategoryUsecase_GetRootCategories_Success(t *testing.T) {
+	// Setup
+	mockCategoryRepo := new(mocks.MockCategoryRepository)
+	categoryUsecase := NewCategoryUsecase(mockCategoryRepo)
+
+	page := 1
+	limit := 10
+	offset := 0
+
+	rootCategories := []*domain.Category{
+		{ID: 1, Name: "Electronics", ParentID: nil},
+		{ID: 2, Name: "Clothing", ParentID: nil},
+	}
+	total := int64(2)
+
+	// Mock expectations
+	mockCategoryRepo.On("GetRootCategories", limit, offset).Return(rootCategories, total, nil)
+
+	// Execute
+	result, meta, err := categoryUsecase.GetRootCategories(page, limit)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Len(t, result, 2)
+	assert.Equal(t, page, meta.Page)
+	assert.Equal(t, total, meta.Total)
+
+	mockCategoryRepo.AssertExpectations(t)
+}
+
+func TestCategoryUsecase_GetChildrenByParentID_Success(t *testing.T) {
+	// Setup
+	mockCategoryRepo := new(mocks.MockCategoryRepository)
+	categoryUsecase := NewCategoryUsecase(mockCategoryRepo)
+
+	parentID := uint64(1)
+	parentCategory := &domain.Category{
+		ID:   parentID,
+		Name: "Electronics",
+	}
+
+	children := []*domain.Category{
+		{ID: 2, Name: "Smartphones", ParentID: &parentID},
+		{ID: 3, Name: "Laptops", ParentID: &parentID},
+	}
+
+	// Mock expectations
+	mockCategoryRepo.On("GetByID", parentID).Return(parentCategory, nil)
+	mockCategoryRepo.On("GetChildrenByParentID", parentID).Return(children, nil)
+
+	// Execute
+	result, err := categoryUsecase.GetChildrenByParentID(parentID)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Len(t, result, 2)
+	assert.Equal(t, parentID, *result[0].ParentID)
 
 	mockCategoryRepo.AssertExpectations(t)
 }

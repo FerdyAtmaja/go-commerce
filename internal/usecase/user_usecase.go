@@ -44,25 +44,38 @@ func (u *UserUsecase) UpdateProfile(userID uint64, req *domain.UpdateProfileRequ
 		return nil, errors.New("failed to get user")
 	}
 
-	// Check if phone is being changed and already exists
-	if req.Phone != user.Phone {
-		if _, err := u.userRepo.GetByPhone(req.Phone); err == nil {
-			return nil, errors.New("phone number already registered")
-		}
+	if req.Name != "" {
+		user.Name = req.Name
 	}
-
-	// Parse date of birth
-	var dateOfBirth *time.Time
+	if req.Phone != "" {
+		// Check if phone is being changed and already exists
+		if req.Phone != user.Phone {
+			if _, err := u.userRepo.GetByPhone(req.Phone); err == nil {
+				return nil, errors.New("phone number already registered")
+			}
+		}
+		user.Phone = req.Phone
+	}
 	if req.DateOfBirth != "" {
 		if dob, err := time.Parse("2006-01-02", req.DateOfBirth); err == nil {
-			dateOfBirth = &dob
+			user.DateOfBirth = &dob
 		}
 	}
-
-	// Update user fields
-	user.Name = req.Name
-	user.Phone = req.Phone
-	user.DateOfBirth = dateOfBirth
+	if req.Gender != "" {
+		user.Gender = req.Gender
+	}
+	if req.About != "" {
+		user.About = req.About
+	}
+	if req.Job != "" {
+		user.Job = req.Job
+	}
+	if req.ProvinceID != nil {
+		user.ProvinceID = req.ProvinceID
+	}
+	if req.CityID != nil {
+		user.CityID = req.CityID
+	}
 
 	if err := u.userRepo.Update(user); err != nil {
 		return nil, errors.New("failed to update user")
@@ -82,7 +95,6 @@ func (u *UserUsecase) UpdatePhoto(userID uint64, photoURL string) (*domain.User,
 		return nil, errors.New("failed to get user")
 	}
 
-	user.PhotoURL = photoURL
 	if err := u.userRepo.Update(user); err != nil {
 		return nil, errors.New("failed to update photo")
 	}

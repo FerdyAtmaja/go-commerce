@@ -69,7 +69,10 @@ func (r *Router) SetupCategoryRoutes(categoryUsecase *usecase.CategoryUsecase) {
 
 	// Public routes
 	categories.Get("/", categoryHandler.GetAllCategories)
+	categories.Get("/root", categoryHandler.GetRootCategories)
+	categories.Get("/slug/:slug", categoryHandler.GetCategoryBySlug)
 	categories.Get("/:id", categoryHandler.GetCategoryByID)
+	categories.Get("/:id/children", categoryHandler.GetChildrenByParentID)
 
 	// Admin only routes
 	adminMiddleware := middleware.JWTMiddleware(r.jwtManager)
@@ -88,9 +91,11 @@ func (r *Router) SetupAddressRoutes(addressUsecase *usecase.AddressUsecase) {
 	// Protected routes (user can only manage their own addresses)
 	jwtMiddleware := middleware.JWTMiddleware(r.jwtManager)
 	addresses.Get("/", jwtMiddleware, addressHandler.GetMyAddresses)
+	addresses.Get("/default", jwtMiddleware, addressHandler.GetDefaultAddress)
 	addresses.Post("/", jwtMiddleware, addressHandler.CreateAddress)
 	addresses.Get("/:id", jwtMiddleware, addressHandler.GetAddressByID)
 	addresses.Put("/:id", jwtMiddleware, addressHandler.UpdateAddress)
+	addresses.Put("/:id/default", jwtMiddleware, addressHandler.SetDefaultAddress)
 	addresses.Delete("/:id", jwtMiddleware, addressHandler.DeleteAddress)
 
 	// Region routes
