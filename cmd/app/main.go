@@ -73,6 +73,10 @@ func main() {
 
 	// Initialize services
 	regionService := service.NewIndonesiaRegionService()
+	backgroundService := service.NewBackgroundService()
+
+	// Start background jobs
+	backgroundService.StartCleanupJobs()
 
 	// Initialize usecases
 	authUsecase := usecase.NewAuthUsecase(userRepo, storeRepo, jwtManager, db)

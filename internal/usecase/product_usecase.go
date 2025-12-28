@@ -77,10 +77,22 @@ func (u *ProductUsecase) CreateProduct(userID uint64, req *domain.CreateProductR
 		return nil, err
 	}
 
+	// Update search index async
+	go func() {
+		// Simulate updating search index
+		// updateSearchIndex(product.ID, product.NamaProduk)
+	}()
+
 	return product, nil
 }
 
 func (u *ProductUsecase) GetProductByID(id uint64) (*domain.Product, error) {
+	// Track product view async
+	go func() {
+		// Simulate tracking product view analytics
+		// trackProductView(id)
+	}()
+	
 	return u.productRepo.GetByID(id)
 }
 

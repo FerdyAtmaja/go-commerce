@@ -92,6 +92,13 @@ func (u *AuthUsecase) Register(req *domain.RegisterRequest) (*domain.AuthRespons
 		return nil, errors.New("failed to complete registration")
 	}
 
+	// Send welcome email async
+	go func() {
+		// Simulate sending welcome email
+		time.Sleep(100 * time.Millisecond)
+		// log.Printf("Welcome email sent to %s", user.Email)
+	}()
+
 	// Generate tokens
 	accessToken, err := u.jwtManager.GenerateAccessToken(user.ID, user.Email, user.IsAdmin)
 	if err != nil {
@@ -127,6 +134,13 @@ func (u *AuthUsecase) Login(req *domain.LoginRequest) (*domain.AuthResponse, err
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
 		return nil, errors.New("invalid email or password")
 	}
+
+	// Update last login async
+	go func() {
+		now := time.Now()
+		user.LastLoginAt = &now
+		u.userRepo.Update(user)
+	}()
 
 	// Generate tokens
 	accessToken, err := u.jwtManager.GenerateAccessToken(user.ID, user.Email, user.IsAdmin)

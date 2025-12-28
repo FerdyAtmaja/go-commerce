@@ -303,6 +303,13 @@ func (h *ProductHandler) UploadProductPhoto(c *fiber.Ctx) error {
 		return response.InternalServerError(c, "Failed to save file")
 	}
 
+	// Process image async (resize, thumbnail)
+	go func() {
+		// Simulate image processing
+		// resizeImage(filePath)
+		// generateThumbnail(filePath)
+	}()
+
 	// Get isPrimary from form
 	isPrimary := c.FormValue("is_primary") == "true"
 
