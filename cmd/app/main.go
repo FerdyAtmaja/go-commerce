@@ -20,7 +20,30 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
+	fiberSwagger "github.com/swaggo/fiber-swagger"
+
+	_ "go-commerce/docs" // Import generated docs
 )
+
+// @title Go Commerce API
+// @version 1.0
+// @description E-commerce API built with Go Fiber and Clean Architecture
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name API Support
+// @contact.url http://www.swagger.io/support
+// @contact.email support@swagger.io
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
+// @host localhost:8080
+// @BasePath /api/v1
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
 
 func main() {
 	// Load configuration
@@ -101,6 +124,9 @@ func main() {
 	router.SetupCategoryRoutes(categoryUsecase)
 	router.SetupAddressRoutes(addressUsecase)
 	router.SetupProductRoutes(productUsecase)
+
+	// Swagger documentation
+	app.Get("/swagger/*", fiberSwagger.WrapHandler)
 
 	// API info endpoint
 	api := app.Group("/api/v1")

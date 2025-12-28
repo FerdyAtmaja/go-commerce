@@ -30,7 +30,18 @@ func NewProductHandler(productUsecase *usecase.ProductUsecase) *ProductHandler {
 	}
 }
 
-// CreateProduct creates a new product
+// CreateProduct godoc
+// @Summary Create a new product
+// @Description Create a new product for the authenticated user's store
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body domain.CreateProductRequest true "Product creation request"
+// @Success 201 {object} response.Response{data=domain.Product} "Product created successfully"
+// @Failure 400 {object} response.Response "Bad request"
+// @Failure 401 {object} response.Response "Unauthorized"
+// @Router /products [post]
 func (h *ProductHandler) CreateProduct(c *fiber.Ctx) error {
 	var req domain.CreateProductRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -70,7 +81,20 @@ func (h *ProductHandler) GetMyProducts(c *fiber.Ctx) error {
 	})
 }
 
-// GetAllProducts gets all products (public)
+// GetAllProducts godoc
+// @Summary Get all products
+// @Description Get all products with pagination and filtering (public endpoint)
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number" default(1)
+// @Param limit query int false "Items per page" default(10)
+// @Param search query string false "Search by product name"
+// @Param category_id query string false "Filter by category ID"
+// @Param sort_by query string false "Sort by: newest, oldest, price_asc, price_desc" default(newest)
+// @Success 200 {object} response.PaginatedResponse{data=[]domain.Product} "Products retrieved successfully"
+// @Failure 500 {object} response.Response "Internal server error"
+// @Router /products [get]
 func (h *ProductHandler) GetAllProducts(c *fiber.Ctx) error {
 	page, _ := strconv.Atoi(c.Query("page", "1"))
 	limit, _ := strconv.Atoi(c.Query("limit", "10"))
@@ -98,7 +122,17 @@ func (h *ProductHandler) GetAllProducts(c *fiber.Ctx) error {
 	})
 }
 
-// GetProductByID gets product by ID
+// GetProductByID godoc
+// @Summary Get product by ID
+// @Description Get a single product by its ID (public endpoint)
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Param id path int true "Product ID"
+// @Success 200 {object} response.Response{data=domain.Product} "Product retrieved successfully"
+// @Failure 400 {object} response.Response "Invalid product ID"
+// @Failure 404 {object} response.Response "Product not found"
+// @Router /products/{id} [get]
 func (h *ProductHandler) GetProductByID(c *fiber.Ctx) error {
 	id, err := strconv.ParseUint(c.Params("id"), 10, 64)
 	if err != nil {

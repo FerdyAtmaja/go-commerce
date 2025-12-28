@@ -19,6 +19,18 @@ func NewTransactionHandler(transactionUsecase *usecase.TransactionUsecase) *Tran
 	}
 }
 
+// CreateTransaction godoc
+// @Summary Create a new transaction
+// @Description Create a new transaction with multiple items (atomic operation)
+// @Tags Transactions
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body domain.CreateTransactionRequest true "Transaction creation request"
+// @Success 200 {object} response.Response{data=domain.Transaction} "Transaction created successfully"
+// @Failure 400 {object} response.Response "Bad request"
+// @Failure 401 {object} response.Response "Unauthorized"
+// @Router /transactions [post]
 func (h *TransactionHandler) CreateTransaction(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint64)
 
@@ -35,6 +47,19 @@ func (h *TransactionHandler) CreateTransaction(c *fiber.Ctx) error {
 	return response.Success(c, "Transaction created successfully", transaction)
 }
 
+// GetTransactionByID godoc
+// @Summary Get transaction by ID
+// @Description Get a specific transaction by ID (ownership validation)
+// @Tags Transactions
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Transaction ID"
+// @Success 200 {object} response.Response{data=domain.Transaction} "Transaction retrieved successfully"
+// @Failure 400 {object} response.Response "Invalid transaction ID"
+// @Failure 401 {object} response.Response "Unauthorized"
+// @Failure 404 {object} response.Response "Transaction not found"
+// @Router /transactions/{id} [get]
 func (h *TransactionHandler) GetTransactionByID(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint64)
 	
@@ -51,6 +76,19 @@ func (h *TransactionHandler) GetTransactionByID(c *fiber.Ctx) error {
 	return response.Success(c, "Transaction retrieved successfully", transaction)
 }
 
+// GetMyTransactions godoc
+// @Summary Get my transactions
+// @Description Get current user's transaction history with pagination
+// @Tags Transactions
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "Page number" default(1)
+// @Param limit query int false "Items per page" default(10)
+// @Success 200 {object} response.PaginatedResponse{data=[]domain.Transaction} "Transactions retrieved successfully"
+// @Failure 401 {object} response.Response "Unauthorized"
+// @Failure 500 {object} response.Response "Internal server error"
+// @Router /transactions/my [get]
 func (h *TransactionHandler) GetMyTransactions(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uint64)
 

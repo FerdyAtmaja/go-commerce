@@ -1,0 +1,786 @@
+basePath: /api/v1
+definitions:
+  domain.Address:
+    properties:
+      city_id:
+        type: string
+      created_at:
+        type: string
+      detail:
+        type: string
+      id:
+        type: integer
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      phone:
+        maxLength: 15
+        minLength: 10
+        type: string
+      postal_code:
+        type: string
+      province_id:
+        type: string
+      updated_at:
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/domain.User'
+        description: Relations
+      user_id:
+        type: integer
+    required:
+    - city_id
+    - detail
+    - name
+    - phone
+    - postal_code
+    - province_id
+    type: object
+  domain.AuthResponse:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+      user:
+        $ref: '#/definitions/domain.User'
+    type: object
+  domain.Category:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      updated_at:
+        type: string
+    required:
+    - name
+    type: object
+  domain.CreateProductRequest:
+    properties:
+      berat:
+        minimum: 0
+        type: integer
+      deskripsi:
+        type: string
+      harga_konsumen:
+        minimum: 0
+        type: number
+      harga_reseller:
+        minimum: 0
+        type: number
+      id_category:
+        type: integer
+      nama_produk:
+        maxLength: 255
+        minLength: 2
+        type: string
+      stok:
+        minimum: 0
+        type: integer
+    required:
+    - harga_konsumen
+    - harga_reseller
+    - id_category
+    - nama_produk
+    type: object
+  domain.CreateTransactionItemRequest:
+    properties:
+      product_id:
+        type: integer
+      quantity:
+        minimum: 1
+        type: integer
+    required:
+    - product_id
+    - quantity
+    type: object
+  domain.CreateTransactionRequest:
+    properties:
+      alamat_pengiriman:
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/domain.CreateTransactionItemRequest'
+        minItems: 1
+        type: array
+      metode_bayar:
+        type: string
+    required:
+    - alamat_pengiriman
+    - items
+    - metode_bayar
+    type: object
+  domain.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  domain.PhotoProduk:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      id_produk:
+        type: integer
+      is_primary:
+        type: boolean
+      position:
+        type: integer
+      product:
+        allOf:
+        - $ref: '#/definitions/domain.Product'
+        description: Relations
+      updated_at:
+        type: string
+      url:
+        type: string
+    type: object
+  domain.Product:
+    properties:
+      berat:
+        type: integer
+      category:
+        $ref: '#/definitions/domain.Category'
+      created_at:
+        type: string
+      deskripsi:
+        type: string
+      harga_konsumen:
+        minimum: 0
+        type: number
+      harga_reseller:
+        minimum: 0
+        type: number
+      id:
+        type: integer
+      id_category:
+        type: integer
+      id_toko:
+        type: integer
+      nama_produk:
+        maxLength: 255
+        minLength: 2
+        type: string
+      photos:
+        items:
+          $ref: '#/definitions/domain.PhotoProduk'
+        type: array
+      slug:
+        type: string
+      sold_count:
+        type: integer
+      status:
+        type: string
+      stok:
+        type: integer
+      toko:
+        allOf:
+        - $ref: '#/definitions/domain.Store'
+        description: Relations
+      updated_at:
+        type: string
+    required:
+    - harga_konsumen
+    - harga_reseller
+    - nama_produk
+    type: object
+  domain.ProductLog:
+    properties:
+      category_id:
+        type: integer
+      created_at:
+        type: string
+      deskripsi:
+        type: string
+      harga_konsumen:
+        type: number
+      harga_reseller:
+        type: number
+      id:
+        type: integer
+      nama_produk:
+        type: string
+      product_id:
+        type: integer
+      slug:
+        type: string
+      store_id:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  domain.RegisterRequest:
+    properties:
+      date_of_birth:
+        type: string
+      email:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      password:
+        minLength: 6
+        type: string
+      phone:
+        maxLength: 15
+        minLength: 10
+        type: string
+    required:
+    - email
+    - name
+    - password
+    - phone
+    type: object
+  domain.Store:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      photo_url:
+        type: string
+      rating:
+        type: number
+      status:
+        type: string
+      updated_at:
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/domain.User'
+        description: Relations
+      user_id:
+        type: integer
+    required:
+    - name
+    type: object
+  domain.Transaction:
+    properties:
+      alamat:
+        $ref: '#/definitions/domain.Address'
+      alamat_pengiriman:
+        type: integer
+      created_at:
+        type: string
+      harga_total:
+        type: number
+      id:
+        type: integer
+      kode_invoice:
+        type: string
+      metode_bayar:
+        type: string
+      paid_at:
+        type: string
+      status:
+        type: string
+      transaction_items:
+        items:
+          $ref: '#/definitions/domain.TransactionItem'
+        type: array
+      updated_at:
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/domain.User'
+        description: Relations
+      user_id:
+        type: integer
+    type: object
+  domain.TransactionItem:
+    properties:
+      created_at:
+        type: string
+      harga_satuan:
+        type: number
+      harga_total:
+        type: number
+      id:
+        type: integer
+      nama_produk_snapshot:
+        type: string
+      product_log:
+        $ref: '#/definitions/domain.ProductLog'
+      product_log_id:
+        type: integer
+      quantity:
+        type: integer
+      store:
+        $ref: '#/definitions/domain.Store'
+      store_id:
+        type: integer
+      transaction:
+        allOf:
+        - $ref: '#/definitions/domain.Transaction'
+        description: Relations
+      transaction_id:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  domain.User:
+    properties:
+      about:
+        type: string
+      city_id:
+        type: integer
+      created_at:
+        type: string
+      date_of_birth:
+        type: string
+      email:
+        type: string
+      email_verified_at:
+        type: string
+      gender:
+        type: string
+      id:
+        type: integer
+      is_admin:
+        type: boolean
+      job:
+        type: string
+      last_login_at:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      phone:
+        maxLength: 15
+        minLength: 10
+        type: string
+      photo_url:
+        type: string
+      province_id:
+        type: integer
+      status:
+        type: string
+      updated_at:
+        type: string
+    required:
+    - email
+    - name
+    - phone
+    type: object
+  response.PaginatedResponse:
+    properties:
+      data: {}
+      message:
+        type: string
+      meta:
+        $ref: '#/definitions/response.PaginationMeta'
+      status:
+        type: string
+    type: object
+  response.PaginationMeta:
+    properties:
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+      total_page:
+        type: integer
+    type: object
+  response.Response:
+    properties:
+      data: {}
+      message:
+        type: string
+      status:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: E-commerce API built with Go Fiber and Clean Architecture
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Go Commerce API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user with email and password
+      parameters:
+      - description: Login request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login successful
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.AuthResponse'
+              type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: User login
+      tags:
+      - Authentication
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Logout current user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Logout successful
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: User logout
+      tags:
+      - Authentication
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user with email, password, and profile information
+      parameters:
+      - description: Registration request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User registered successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.AuthResponse'
+              type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Register a new user
+      tags:
+      - Authentication
+  /products:
+    get:
+      consumes:
+      - application/json
+      description: Get all products with pagination and filtering (public endpoint)
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Search by product name
+        in: query
+        name: search
+        type: string
+      - description: Filter by category ID
+        in: query
+        name: category_id
+        type: string
+      - default: newest
+        description: 'Sort by: newest, oldest, price_asc, price_desc'
+        in: query
+        name: sort_by
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Products retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.PaginatedResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/domain.Product'
+                  type: array
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get all products
+      tags:
+      - Products
+    post:
+      consumes:
+      - application/json
+      description: Create a new product for the authenticated user's store
+      parameters:
+      - description: Product creation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CreateProductRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Product created successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.Product'
+              type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Create a new product
+      tags:
+      - Products
+  /products/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get a single product by its ID (public endpoint)
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Product retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.Product'
+              type: object
+        "400":
+          description: Invalid product ID
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Product not found
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get product by ID
+      tags:
+      - Products
+  /transactions:
+    post:
+      consumes:
+      - application/json
+      description: Create a new transaction with multiple items (atomic operation)
+      parameters:
+      - description: Transaction creation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CreateTransactionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Transaction created successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.Transaction'
+              type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Create a new transaction
+      tags:
+      - Transactions
+  /transactions/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get a specific transaction by ID (ownership validation)
+      parameters:
+      - description: Transaction ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Transaction retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.Transaction'
+              type: object
+        "400":
+          description: Invalid transaction ID
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Transaction not found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get transaction by ID
+      tags:
+      - Transactions
+  /transactions/my:
+    get:
+      consumes:
+      - application/json
+      description: Get current user's transaction history with pagination
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Transactions retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.PaginatedResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/domain.Transaction'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get my transactions
+      tags:
+      - Transactions
+  /users/my:
+    get:
+      consumes:
+      - application/json
+      description: Get current user profile information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Profile retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.User'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get user profile
+      tags:
+      - Authentication
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
