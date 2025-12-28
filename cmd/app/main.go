@@ -6,7 +6,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	"go-commerce/internal/domain"
 	"go-commerce/internal/handler/http"
 	"go-commerce/internal/handler/response"
 	"go-commerce/internal/repository/mysql"
@@ -53,11 +52,6 @@ func main() {
 	db, err := database.NewMySQLConnection(cfg)
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
-	}
-
-	// Auto migrate
-	if err := db.AutoMigrate(&domain.User{}, &domain.Store{}, &domain.Category{}, &domain.Address{}, &domain.Product{}, &domain.PhotoProduk{}); err != nil {
-		log.Fatal("Failed to migrate database:", err)
 	}
 
 	// Initialize JWT manager

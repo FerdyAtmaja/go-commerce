@@ -16,4 +16,4 @@ INSERT INTO categories (nama_category, slug, parent_id) VALUES
 
 -- Insert admin user (password should be hashed in real application)
 INSERT INTO users (nama, kata_sandi, email, is_admin, status) VALUES
-('Admin', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin@go-commerce.com', TRUE, 'active');
+('Admin', 'admin', 'admin@gmail.com', TRUE, 'active');

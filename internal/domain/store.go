@@ -22,6 +22,10 @@ type Store struct {
 	User User `json:"user,omitempty" gorm:"foreignKey:UserID"`
 }
 
+func (Store) TableName() string {
+	return "toko"
+}
+
 type StoreRepository interface {
 	Create(store *Store) error
 	GetByID(id uint64) (*Store, error)

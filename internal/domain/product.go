@@ -29,6 +29,10 @@ type Product struct {
 	Photos   []PhotoProduk `json:"photos,omitempty" gorm:"foreignKey:IDProduk"`
 }
 
+func (Product) TableName() string {
+	return "produk"
+}
+
 type PhotoProduk struct {
 	ID        uint64         `json:"id" gorm:"primaryKey"`
 	IDProduk  uint64         `json:"id_produk" gorm:"not null;index"`
@@ -41,6 +45,10 @@ type PhotoProduk struct {
 
 	// Relations
 	Product Product `json:"product,omitempty" gorm:"foreignKey:IDProduk"`
+}
+
+func (PhotoProduk) TableName() string {
+	return "foto_produk"
 }
 
 type ProductRepository interface {
