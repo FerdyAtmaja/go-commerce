@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"testing"
+	"time"
 
 	"go-commerce/internal/domain"
 	"go-commerce/internal/usecase/mocks"
@@ -45,6 +46,7 @@ func TestAuthUsecase_Login_Success(t *testing.T) {
 
 	// Mock expectations
 	mockUserRepo.On("GetByEmail", email).Return(user, nil)
+	mockUserRepo.On("Update", user).Return(nil) // Mock for goroutine LastLoginAt update
 
 	// Execute
 	result, err := authUsecase.Login(req)
@@ -58,6 +60,8 @@ func TestAuthUsecase_Login_Success(t *testing.T) {
 	assert.Equal(t, user.Email, result.User.Email)
 	assert.Empty(t, result.User.Password) // Password should be removed
 
+	// Wait a bit for goroutine to complete
+	time.Sleep(10 * time.Millisecond)
 	mockUserRepo.AssertExpectations(t)
 }
 
@@ -113,6 +117,7 @@ func TestAuthUsecase_Login_InvalidPassword(t *testing.T) {
 	
 	user := &domain.User{
 		ID:       1,
+		Name:     "Test User",
 		Email:    email,
 		Password: string(hashedPassword),
 	}
@@ -122,7 +127,7 @@ func TestAuthUsecase_Login_InvalidPassword(t *testing.T) {
 		Password: wrongPassword,
 	}
 
-	// Mock expectations
+	// Mock expectations - no Update mock needed since password validation fails before goroutine
 	mockUserRepo.On("GetByEmail", email).Return(user, nil)
 
 	// Execute
