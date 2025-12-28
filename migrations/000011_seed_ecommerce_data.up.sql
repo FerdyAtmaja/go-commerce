@@ -59,7 +59,7 @@ INSERT IGNORE INTO log_produk (id_produk, nama_produk, slug, harga_konsumen, har
 (5, 'Dress Wanita Elegant', 'dress-wanita-elegant', 350000, 250000, 'Dress elegant untuk acara formal', 2, 9, NOW(), NOW());
 
 -- Seed transactions
-INSERT IGNORE INTO trx (id_user, alamat_pengiriman, harga_total, kode_invoice, metode_bayar, status, created_at, updated_at) VALUES
+INSERT IGNORE INTO trx (id_user, alamat_pengiriman, harga_total, kode_invoice, metode_bayar, status_pembayaran, created_at, updated_at) VALUES
 (2, 1, 17000000, 'INV-2024-001', 'transfer', 'paid', NOW(), NOW()),
 (3, 2, 350000, 'INV-2024-002', 'ewallet', 'paid', NOW(), NOW()),
 (4, 3, 620000, 'INV-2024-003', 'transfer', 'pending', NOW(), NOW()),

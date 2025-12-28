@@ -5,7 +5,7 @@ CREATE TABLE trx (
     harga_total DECIMAL(14,2) NOT NULL,
     kode_invoice VARCHAR(255) UNIQUE NOT NULL,
     metode_bayar ENUM('transfer', 'cod', 'ewallet', 'credit_card'),
-    status ENUM('pending', 'paid', 'cancelled', 'shipped', 'done') DEFAULT 'pending',
+    status_pembayaran ENUM('pending', 'paid', 'cancelled', 'shipped', 'done') DEFAULT 'pending',
     paid_at TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -14,6 +14,6 @@ CREATE TABLE trx (
 );
 
 CREATE INDEX idx_trx_user ON trx(id_user);
-CREATE INDEX idx_trx_status ON trx(status);
+CREATE INDEX idx_trx_status_pembayaran ON trx(status_pembayaran);
 CREATE INDEX idx_trx_invoice ON trx(kode_invoice);
 CREATE INDEX idx_trx_created ON trx(created_at);

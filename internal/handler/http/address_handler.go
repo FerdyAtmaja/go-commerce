@@ -153,10 +153,6 @@ func (h *AddressHandler) UpdateAddress(c *fiber.Ctx) error {
 		return response.BadRequest(c, "Invalid request body")
 	}
 
-	if err := h.validator.Struct(&req); err != nil {
-		return response.BadRequest(c, "Validation failed: "+err.Error())
-	}
-
 	address, err := h.addressUsecase.UpdateAddress(addressID, userID, &req)
 	if err != nil {
 		return response.BadRequest(c, err.Error())

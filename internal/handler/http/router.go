@@ -54,11 +54,13 @@ func (r *Router) SetupStoreRoutes(storeUsecase *usecase.StoreUsecase) {
 
 	// Public routes
 	stores.Get("/", storeHandler.GetAllStores)
-	stores.Get("/:id", storeHandler.GetStoreByID)
 
 	// Protected routes
 	stores.Get("/my", middleware.JWTMiddleware(r.jwtManager), storeHandler.GetMyStore)
 	stores.Put("/my", middleware.JWTMiddleware(r.jwtManager), storeHandler.UpdateMyStore)
+
+	// Dynamic routes (must be last)
+	stores.Get("/:id", storeHandler.GetStoreByID)
 }
 
 func (r *Router) SetupCategoryRoutes(categoryUsecase *usecase.CategoryUsecase) {
@@ -113,13 +115,20 @@ func (r *Router) SetupProductRoutes(productUsecase *usecase.ProductUsecase) {
 
 	// Public routes
 	products.Get("/", productHandler.GetAllProducts)
+	products.Get("/search/slug", productHandler.SearchProductsBySlug)
 	products.Get("/slug/:slug", productHandler.GetProductBySlug)
-	products.Get("/:id", productHandler.GetProductByID)
 
 	// Protected routes (store owner only)
 	jwtMiddleware := middleware.JWTMiddleware(r.jwtManager)
 	products.Get("/my", jwtMiddleware, productHandler.GetMyProducts)
 	products.Post("/", jwtMiddleware, productHandler.CreateProduct)
+
+	// Admin only routes
+	adminMiddleware := middleware.RequireAdmin()
+	products.Get("/status", jwtMiddleware, adminMiddleware, productHandler.GetProductsByStatus)
+
+	// Dynamic routes (must be last)
+	products.Get("/:id", productHandler.GetProductByID)
 	products.Put("/:id", jwtMiddleware, productHandler.UpdateProduct)
 	products.Delete("/:id", jwtMiddleware, productHandler.DeleteProduct)
 

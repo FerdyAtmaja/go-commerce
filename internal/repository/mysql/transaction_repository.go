@@ -20,7 +20,7 @@ func (r *transactionRepository) Create(tx *domain.Transaction) error {
 
 func (r *transactionRepository) GetByID(id uint64) (*domain.Transaction, error) {
 	var tx domain.Transaction
-	err := r.db.Preload("User").Preload("Store").Preload("TransactionItems").First(&tx, id).Error
+	err := r.db.Preload("User").Preload("Alamat").Preload("TransactionItems").First(&tx, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -31,34 +31,16 @@ func (r *transactionRepository) GetByUserID(userID uint64, limit, offset int) ([
 	var transactions []*domain.Transaction
 	var total int64
 
-	err := r.db.Model(&domain.Transaction{}).Where("user_id = ?", userID).Count(&total).Error
+	// Use idx_trx_user index
+	err := r.db.Model(&domain.Transaction{}).Where("id_user = ?", userID).Count(&total).Error
 	if err != nil {
 		return nil, 0, err
 	}
 
-	err = r.db.Where("user_id = ?", userID).
-		Preload("Store").
+	err = r.db.Where("id_user = ?", userID).
+		Preload("Alamat").
 		Preload("TransactionItems").
-		Order("created_at DESC").
-		Limit(limit).Offset(offset).
-		Find(&transactions).Error
-
-	return transactions, total, err
-}
-
-func (r *transactionRepository) GetByStoreID(storeID uint64, limit, offset int) ([]*domain.Transaction, int64, error) {
-	var transactions []*domain.Transaction
-	var total int64
-
-	err := r.db.Model(&domain.Transaction{}).Where("id_toko = ?", storeID).Count(&total).Error
-	if err != nil {
-		return nil, 0, err
-	}
-
-	err = r.db.Where("id_toko = ?", storeID).
-		Preload("User").
-		Preload("TransactionItems").
-		Order("created_at DESC").
+		Order("created_at DESC"). // Uses idx_trx_created index
 		Limit(limit).Offset(offset).
 		Find(&transactions).Error
 
@@ -86,4 +68,25 @@ func (r *transactionRepository) RollbackTx(tx interface{}) error {
 func (r *transactionRepository) CreateWithTx(dbTx interface{}, tx *domain.Transaction) error {
 	gormTx := dbTx.(*gorm.DB)
 	return gormTx.Create(tx).Error
+}
+
+// GetByStatus gets transactions by status (uses idx_trx_status_pembayaran index)
+func (r *transactionRepository) GetByStatus(status string, limit, offset int) ([]*domain.Transaction, int64, error) {
+	var transactions []*domain.Transaction
+	var total int64
+
+	err := r.db.Model(&domain.Transaction{}).Where("status_pembayaran = ?", status).Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	err = r.db.Where("status_pembayaran = ?", status).
+		Preload("User").
+		Preload("Alamat").
+		Preload("TransactionItems").
+		Order("created_at DESC").
+		Limit(limit).Offset(offset).
+		Find(&transactions).Error
+
+	return transactions, total, err
 }

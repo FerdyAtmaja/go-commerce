@@ -23,6 +23,23 @@ func NewAddressUsecase(addressRepo domain.AddressRepository, regionService domai
 }
 
 func (u *AddressUsecase) CreateAddress(userID uint64, req *domain.CreateAddressRequest) (*domain.Address, error) {
+	// Validate required fields are not empty
+	if len(req.JudulAlamat) < 2 || len(req.JudulAlamat) > 255 {
+		return nil, errors.New("judul_alamat must be between 2 and 255 characters")
+	}
+	if len(req.NamaPenerima) < 2 || len(req.NamaPenerima) > 255 {
+		return nil, errors.New("nama_penerima must be between 2 and 255 characters")
+	}
+	if len(req.DetailAlamat) < 2 {
+		return nil, errors.New("detail_alamat must be at least 2 characters")
+	}
+	if len(req.NoTelp) > 0 && (len(req.NoTelp) < 10 || len(req.NoTelp) > 20) {
+		return nil, errors.New("notelp must be between 10 and 20 characters when provided")
+	}
+	if len(req.KodePos) > 10 {
+		return nil, errors.New("kode_pos must be maximum 10 characters")
+	}
+
 	address := &domain.Address{
 		UserID:       userID,
 		JudulAlamat:  req.JudulAlamat,
@@ -112,16 +129,43 @@ func (u *AddressUsecase) UpdateAddress(addressID, userID uint64, req *domain.Upd
 		return nil, errors.New("failed to get address")
 	}
 
-	// Update address fields
-	address.JudulAlamat = req.JudulAlamat
-	address.NamaPenerima = req.NamaPenerima
-	address.NoTelp = req.NoTelp
-	address.DetailAlamat = req.DetailAlamat
-	address.KodePos = req.KodePos
-	address.IsDefault = req.IsDefault
+	// Update only provided fields with validation
+	if req.JudulAlamat != nil {
+		if len(*req.JudulAlamat) < 2 || len(*req.JudulAlamat) > 255 {
+			return nil, errors.New("judul_alamat must be between 2 and 255 characters")
+		}
+		address.JudulAlamat = *req.JudulAlamat
+	}
+	if req.NamaPenerima != nil {
+		if len(*req.NamaPenerima) < 2 || len(*req.NamaPenerima) > 255 {
+			return nil, errors.New("nama_penerima must be between 2 and 255 characters")
+		}
+		address.NamaPenerima = *req.NamaPenerima
+	}
+	if req.NoTelp != nil {
+		if len(*req.NoTelp) > 0 && (len(*req.NoTelp) < 10 || len(*req.NoTelp) > 20) {
+			return nil, errors.New("notelp must be between 10 and 20 characters when provided")
+		}
+		address.NoTelp = *req.NoTelp
+	}
+	if req.DetailAlamat != nil {
+		if len(*req.DetailAlamat) < 2 {
+			return nil, errors.New("detail_alamat must be at least 2 characters")
+		}
+		address.DetailAlamat = *req.DetailAlamat
+	}
+	if req.KodePos != nil {
+		if len(*req.KodePos) > 10 {
+			return nil, errors.New("kode_pos must be maximum 10 characters")
+		}
+		address.KodePos = *req.KodePos
+	}
+	if req.IsDefault != nil {
+		address.IsDefault = *req.IsDefault
+	}
 
 	// Handle default address logic
-	if req.IsDefault && !address.IsDefault {
+	if req.IsDefault != nil && *req.IsDefault && !address.IsDefault {
 		// Setting as new default
 		if err := u.addressRepo.SetDefault(addressID, userID); err != nil {
 			return nil, errors.New("failed to set default address")

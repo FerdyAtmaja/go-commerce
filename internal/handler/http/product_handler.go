@@ -104,7 +104,9 @@ func (h *ProductHandler) GetMyProducts(c *fiber.Ctx) error {
 // @Param limit query int false "Items per page" default(10)
 // @Param search query string false "Search by product name"
 // @Param category_id query string false "Filter by category ID"
-// @Param sort_by query string false "Sort by: newest, oldest, price_asc, price_desc" default(newest)
+// @Param min_price query string false "Minimum price filter"
+// @Param max_price query string false "Maximum price filter"
+// @Param sort_by query string false "Sort by: newest, oldest, price_asc, price_desc, popular, name_asc, name_desc" default(newest)
 // @Success 200 {object} response.PaginatedResponse{data=[]domain.Product} "Products retrieved successfully"
 // @Failure 500 {object} response.Response "Internal server error"
 // @Router /products [get]
@@ -162,7 +164,7 @@ func (h *ProductHandler) GetProductByID(c *fiber.Ctx) error {
 
 // GetProductBySlug godoc
 // @Summary Get product by slug
-// @Description Get a single product by its slug (public endpoint)
+// @Description Get a single product by its exact slug (public endpoint)
 // @Tags Products
 // @Accept json
 // @Produce json
@@ -183,6 +185,40 @@ func (h *ProductHandler) GetProductBySlug(c *fiber.Ctx) error {
 	}
 
 	return response.Success(c, "Product retrieved successfully", product)
+}
+
+// SearchProductsBySlug godoc
+// @Summary Search products by slug pattern
+// @Description Search products by partial slug match with pagination
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Param slug query string true "Slug pattern to search"
+// @Param page query int false "Page number" default(1)
+// @Param limit query int false "Items per page" default(10)
+// @Success 200 {object} response.PaginatedResponse{data=[]domain.Product} "Products found successfully"
+// @Failure 400 {object} response.Response "Bad request"
+// @Router /products/search/slug [get]
+func (h *ProductHandler) SearchProductsBySlug(c *fiber.Ctx) error {
+	slugPattern := c.Query("slug")
+	if slugPattern == "" {
+		return response.BadRequest(c, "Slug parameter is required")
+	}
+
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+	limit, _ := strconv.Atoi(c.Query("limit", "10"))
+
+	products, total, err := h.productUsecase.SearchProductsBySlug(slugPattern, page, limit)
+	if err != nil {
+		return response.InternalServerError(c, err.Error())
+	}
+
+	return response.Paginated(c, "Products found successfully", products, response.PaginationMeta{
+		Page:      page,
+		Limit:     limit,
+		Total:     total,
+		TotalPage: (int(total) + limit - 1) / limit,
+	})
 }
 
 // UpdateProduct godoc
@@ -393,6 +429,47 @@ func (h *ProductHandler) DeleteProductPhoto(c *fiber.Ctx) error {
 	}
 
 	return response.Success(c, "Photo deleted successfully", nil)
+}
+
+// GetProductsByStatus godoc
+// @Summary Get products by status (Admin only)
+// @Description Get products filtered by status with pagination
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param status query string true "Product status: active or inactive"
+// @Param page query int false "Page number" default(1)
+// @Param limit query int false "Items per page" default(10)
+// @Success 200 {object} response.PaginatedResponse{data=[]domain.Product} "Products retrieved successfully"
+// @Failure 400 {object} response.Response "Bad request"
+// @Failure 401 {object} response.Response "Unauthorized"
+// @Failure 403 {object} response.Response "Forbidden - admin only"
+// @Router /products/status [get]
+func (h *ProductHandler) GetProductsByStatus(c *fiber.Ctx) error {
+	status := c.Query("status")
+	if status == "" {
+		return response.BadRequest(c, "Status parameter is required")
+	}
+
+	if status != "active" && status != "inactive" {
+		return response.BadRequest(c, "Status must be 'active' or 'inactive'")
+	}
+
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+	limit, _ := strconv.Atoi(c.Query("limit", "10"))
+
+	products, total, err := h.productUsecase.GetProductsByStatus(status, page, limit)
+	if err != nil {
+		return response.InternalServerError(c, err.Error())
+	}
+
+	return response.Paginated(c, "Products retrieved successfully", products, response.PaginationMeta{
+		Page:      page,
+		Limit:     limit,
+		Total:     total,
+		TotalPage: (int(total) + limit - 1) / limit,
+	})
 }
 
 // Helper functions

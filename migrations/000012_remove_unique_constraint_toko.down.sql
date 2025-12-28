@@ -1,0 +1,1 @@
+ALTER TABLE toko ADD UNIQUE KEY id_user (id_user);

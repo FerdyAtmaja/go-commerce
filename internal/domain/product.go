@@ -7,21 +7,21 @@ import (
 )
 
 type Product struct {
-	ID              uint64         `json:"id" gorm:"primaryKey"`
-	NamaProduk      string         `json:"nama_produk" gorm:"not null" validate:"required,min=2,max=255"`
-	Slug            string         `json:"slug" gorm:"uniqueIndex;not null"`
-	HargaReseller   float64        `json:"harga_reseller" gorm:"not null" validate:"required,min=0"`
-	HargaKonsumen   float64        `json:"harga_konsumen" gorm:"not null" validate:"required,min=0"`
-	Stok            int            `json:"stok" gorm:"default:0"`
-	Deskripsi       string         `json:"deskripsi"`
-	IDToko          uint64         `json:"id_toko" gorm:"not null;index"`
-	IDCategory      uint64         `json:"id_category" gorm:"not null;index"`
-	Status          string         `json:"status" gorm:"default:active"`
-	Berat           int            `json:"berat" gorm:"default:0"`
-	SoldCount       int            `json:"sold_count" gorm:"default:0"`
-	CreatedAt       time.Time      `json:"created_at"`
-	UpdatedAt       time.Time      `json:"updated_at"`
-	DeletedAt       gorm.DeletedAt `json:"-" gorm:"index"`
+	ID              uint64         `json:"id" gorm:"primaryKey;column:id"`
+	NamaProduk      string         `json:"nama_produk" gorm:"column:nama_produk;type:varchar(255);not null" validate:"required,min=2,max=255"`
+	Slug            string         `json:"slug" gorm:"column:slug;type:varchar(255);uniqueIndex;not null"`
+	HargaReseller   float64        `json:"harga_reseller" gorm:"column:harga_reseller;type:decimal(12,2);not null" validate:"required,min=0"`
+	HargaKonsumen   float64        `json:"harga_konsumen" gorm:"column:harga_konsumen;type:decimal(12,2);not null" validate:"required,min=0"`
+	Stok            int            `json:"stok" gorm:"column:stok;type:int;default:0"`
+	Deskripsi       string         `json:"deskripsi" gorm:"column:deskripsi;type:text"`
+	IDToko          uint64         `json:"id_toko" gorm:"column:id_toko;type:bigint unsigned;not null;index:idx_produk_toko"`
+	IDCategory      uint64         `json:"id_category" gorm:"column:id_category;type:bigint unsigned;not null;index:idx_produk_category"`
+	Status          string         `json:"status" gorm:"column:status;type:enum('active','inactive');default:active;index:idx_produk_status" validate:"oneof=active inactive"`
+	Berat           int            `json:"berat" gorm:"column:berat;type:int;default:0"`
+	SoldCount       int            `json:"sold_count" gorm:"column:sold_count;type:int;default:0"`
+	CreatedAt       time.Time      `json:"created_at" gorm:"column:created_at;type:timestamp;default:CURRENT_TIMESTAMP"`
+	UpdatedAt       time.Time      `json:"updated_at" gorm:"column:updated_at;type:timestamp;default:CURRENT_TIMESTAMP"`
+	DeletedAt       gorm.DeletedAt `json:"-" gorm:"column:deleted_at;type:timestamp;index:idx_produk_deleted_at"`
 
 	// Relations
 	Toko     Store        `json:"toko,omitempty" gorm:"foreignKey:IDToko"`
@@ -34,14 +34,14 @@ func (Product) TableName() string {
 }
 
 type PhotoProduk struct {
-	ID        uint64         `json:"id" gorm:"primaryKey"`
-	IDProduk  uint64         `json:"id_produk" gorm:"not null;index"`
-	URL       string         `json:"url" gorm:"not null"`
-	IsPrimary bool           `json:"is_primary" gorm:"default:false"`
-	Position  int            `json:"position" gorm:"default:0"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+	ID        uint64         `json:"id" gorm:"primaryKey;column:id"`
+	IDProduk  uint64         `json:"id_produk" gorm:"column:id_produk;type:bigint unsigned;not null;index:idx_foto_produk_produk"`
+	URL       string         `json:"url" gorm:"column:url;type:varchar(255);not null"`
+	IsPrimary bool           `json:"is_primary" gorm:"column:is_primary;type:boolean;default:false;index:idx_foto_produk_primary"`
+	Position  int64          `json:"position" gorm:"column:position;type:bigint;default:0;index:idx_foto_produk_position"`
+	CreatedAt time.Time      `json:"created_at" gorm:"column:created_at;type:timestamp;default:CURRENT_TIMESTAMP"`
+	UpdatedAt time.Time      `json:"updated_at" gorm:"column:updated_at;type:timestamp;default:CURRENT_TIMESTAMP"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"column:deleted_at;type:timestamp;index:idx_foto_produk_deleted_at"`
 
 	// Relations
 	Product Product `json:"product,omitempty" gorm:"foreignKey:IDProduk"`
@@ -55,8 +55,11 @@ type ProductRepository interface {
 	Create(product *Product) error
 	GetByID(id uint64) (*Product, error)
 	GetBySlug(slug string) (*Product, error)
+	SearchBySlug(slugPattern string, limit, offset int) ([]*Product, int64, error)
 	GetByTokoID(tokoID uint64, limit, offset int, search string) ([]*Product, int64, error)
 	GetAll(limit, offset int, search, categoryID string) ([]*Product, int64, error)
+	GetAllWithFilter(filter *ProductFilter) ([]*Product, int64, error)
+	GetByStatus(status string, limit, offset int) ([]*Product, int64, error)
 	Update(product *Product) error
 	Delete(id uint64) error
 	CheckOwnership(productID, tokoID uint64) error
@@ -78,6 +81,7 @@ type CreateProductRequest struct {
 	Deskripsi     string  `json:"deskripsi"`
 	IDCategory    uint64  `json:"id_category" validate:"required"`
 	Berat         int     `json:"berat" validate:"min=0"`
+	Status        string  `json:"status" validate:"omitempty,oneof=active inactive"`
 }
 
 type UpdateProductRequest struct {
@@ -88,6 +92,7 @@ type UpdateProductRequest struct {
 	Deskripsi     string  `json:"deskripsi"`
 	IDCategory    uint64  `json:"id_category" validate:"required"`
 	Berat         int     `json:"berat" validate:"min=0"`
+	Status        string  `json:"status" validate:"omitempty,oneof=active inactive"`
 }
 
 type ProductFilter struct {

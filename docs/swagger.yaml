@@ -2,25 +2,28 @@ basePath: /api/v1
 definitions:
   domain.Address:
     properties:
-      city_id:
-        type: string
       created_at:
         type: string
-      detail:
+      detail_alamat:
         type: string
       id:
         type: integer
-      name:
-        maxLength: 100
+      is_default:
+        type: boolean
+      judul_alamat:
+        maxLength: 255
         minLength: 2
         type: string
-      phone:
-        maxLength: 15
+      kode_pos:
+        maxLength: 10
+        type: string
+      nama_penerima:
+        maxLength: 255
+        minLength: 2
+        type: string
+      notelp:
+        maxLength: 20
         minLength: 10
-        type: string
-      postal_code:
-        type: string
-      province_id:
         type: string
       updated_at:
         type: string
@@ -31,12 +34,9 @@ definitions:
       user_id:
         type: integer
     required:
-    - city_id
-    - detail
-    - name
-    - phone
-    - postal_code
-    - province_id
+    - detail_alamat
+    - judul_alamat
+    - nama_penerima
     type: object
   domain.AuthResponse:
     properties:
@@ -96,29 +96,29 @@ definitions:
     type: object
   domain.CreateAddressRequest:
     properties:
-      city_id:
+      detail_alamat:
         type: string
-      detail:
-        type: string
-      name:
-        maxLength: 100
+      is_default:
+        type: boolean
+      judul_alamat:
+        maxLength: 255
         minLength: 2
         type: string
-      phone:
-        maxLength: 15
+      kode_pos:
+        maxLength: 10
+        type: string
+      nama_penerima:
+        maxLength: 255
+        minLength: 2
+        type: string
+      notelp:
+        maxLength: 20
         minLength: 10
         type: string
-      postal_code:
-        type: string
-      province_id:
-        type: string
     required:
-    - city_id
-    - detail
-    - name
-    - phone
-    - postal_code
-    - province_id
+    - detail_alamat
+    - judul_alamat
+    - nama_penerima
     type: object
   domain.CreateCategoryRequest:
     properties:
@@ -127,6 +127,7 @@ definitions:
         minLength: 2
         type: string
       parent_id:
+        example: 0
         type: integer
     required:
     - name
@@ -149,6 +150,11 @@ definitions:
       nama_produk:
         maxLength: 255
         minLength: 2
+        type: string
+      status:
+        enum:
+        - active
+        - inactive
         type: string
       stok:
         minimum: 0
@@ -180,6 +186,11 @@ definitions:
         minItems: 1
         type: array
       metode_bayar:
+        enum:
+        - transfer
+        - cod
+        - ewallet
+        - credit_card
         type: string
     required:
     - alamat_pengiriman
@@ -252,6 +263,9 @@ definitions:
       sold_count:
         type: integer
       status:
+        enum:
+        - active
+        - inactive
         type: string
       stok:
         type: integer
@@ -365,10 +379,21 @@ definitions:
       kode_invoice:
         type: string
       metode_bayar:
+        enum:
+        - transfer
+        - cod
+        - ewallet
+        - credit_card
         type: string
       paid_at:
         type: string
-      status:
+      status_pembayaran:
+        enum:
+        - pending
+        - paid
+        - cancelled
+        - shipped
+        - done
         type: string
       transaction_items:
         items:
@@ -416,29 +441,26 @@ definitions:
     type: object
   domain.UpdateAddressRequest:
     properties:
-      city_id:
-        type: string
-      detail:
-        type: string
-      name:
-        maxLength: 100
+      detail_alamat:
         minLength: 2
         type: string
-      phone:
-        maxLength: 15
+      is_default:
+        type: boolean
+      judul_alamat:
+        maxLength: 255
+        minLength: 2
+        type: string
+      kode_pos:
+        maxLength: 10
+        type: string
+      nama_penerima:
+        maxLength: 255
+        minLength: 2
+        type: string
+      notelp:
+        maxLength: 20
         minLength: 10
         type: string
-      postal_code:
-        type: string
-      province_id:
-        type: string
-    required:
-    - city_id
-    - detail
-    - name
-    - phone
-    - postal_code
-    - province_id
     type: object
   domain.UpdateCategoryRequest:
     properties:
@@ -447,6 +469,7 @@ definitions:
         minLength: 2
         type: string
       parent_id:
+        example: 1
         type: integer
     required:
     - name
@@ -469,6 +492,11 @@ definitions:
       nama_produk:
         maxLength: 255
         minLength: 2
+        type: string
+      status:
+        enum:
+        - active
+        - inactive
         type: string
       stok:
         minimum: 0
@@ -513,8 +541,8 @@ definitions:
         maxLength: 100
         minLength: 2
         type: string
-    required:
-    - name
+      url_foto:
+        type: string
     type: object
   domain.User:
     properties:
@@ -800,6 +828,71 @@ paths:
       summary: Update an address
       tags:
       - Addresses
+  /addresses/{id}/default:
+    put:
+      consumes:
+      - application/json
+      description: Set an address as default for the authenticated user
+      parameters:
+      - description: Address ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Default address set successfully
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Address not found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Set default address
+      tags:
+      - Addresses
+  /addresses/default:
+    get:
+      consumes:
+      - application/json
+      description: Get the default address for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Default address retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.Address'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: No default address found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get default address
+      tags:
+      - Addresses
   /auth/login:
     post:
       consumes:
@@ -919,9 +1012,10 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create a new product category (admin only)
+      description: Create a new product category (admin only). For root category,
+        omit parent_id or set to null. For subcategory, provide parent_id.
       parameters:
-      - description: Category creation request
+      - description: 'Category creation request. For root category: {\'
         in: body
         name: request
         required: true
@@ -1069,6 +1163,110 @@ paths:
       summary: Update a category
       tags:
       - Categories
+  /categories/{id}/children:
+    get:
+      consumes:
+      - application/json
+      description: Get all children categories of a parent category (public endpoint)
+      parameters:
+      - description: Parent Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Children categories retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/domain.Category'
+                  type: array
+              type: object
+        "400":
+          description: Invalid parent category ID
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Parent category not found
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get children categories
+      tags:
+      - Categories
+  /categories/root:
+    get:
+      consumes:
+      - application/json
+      description: Get all root categories (categories without parent) with pagination
+        (public endpoint)
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Root categories retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.PaginatedResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/domain.Category'
+                  type: array
+              type: object
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get root categories
+      tags:
+      - Categories
+  /categories/slug/{slug}:
+    get:
+      consumes:
+      - application/json
+      description: Get a single category by its slug (public endpoint)
+      parameters:
+      - description: Category Slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Category retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.Category'
+              type: object
+        "404":
+          description: Category not found
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get category by slug
+      tags:
+      - Categories
   /products:
     get:
       consumes:
@@ -1093,8 +1291,17 @@ paths:
         in: query
         name: category_id
         type: string
+      - description: Minimum price filter
+        in: query
+        name: min_price
+        type: string
+      - description: Maximum price filter
+        in: query
+        name: max_price
+        type: string
       - default: newest
-        description: 'Sort by: newest, oldest, price_asc, price_desc'
+        description: 'Sort by: newest, oldest, price_asc, price_desc, popular, name_asc,
+          name_desc'
         in: query
         name: sort_by
         type: string
@@ -1446,11 +1653,53 @@ paths:
       summary: Get current user's products
       tags:
       - Products
+  /products/search/slug:
+    get:
+      consumes:
+      - application/json
+      description: Search products by partial slug match with pagination
+      parameters:
+      - description: Slug pattern to search
+        in: query
+        name: slug
+        required: true
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Products found successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.PaginatedResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/domain.Product'
+                  type: array
+              type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Search products by slug pattern
+      tags:
+      - Products
   /products/slug/{slug}:
     get:
       consumes:
       - application/json
-      description: Get a single product by its slug (public endpoint)
+      description: Get a single product by its exact slug (public endpoint)
       parameters:
       - description: Product slug
         in: path
@@ -1478,6 +1727,58 @@ paths:
           schema:
             $ref: '#/definitions/response.Response'
       summary: Get product by slug
+      tags:
+      - Products
+  /products/status:
+    get:
+      consumes:
+      - application/json
+      description: Get products filtered by status with pagination
+      parameters:
+      - description: 'Product status: active or inactive'
+        in: query
+        name: status
+        required: true
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Products retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.PaginatedResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/domain.Product'
+                  type: array
+              type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden - admin only
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get products by status (Admin only)
       tags:
       - Products
   /regions/provinces:

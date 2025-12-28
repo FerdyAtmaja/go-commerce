@@ -56,9 +56,16 @@ func (u *StoreUsecase) UpdateMyStore(userID uint64, req *domain.UpdateStoreReque
 		return nil, errors.New("failed to get store")
 	}
 
-	// Update store fields
-	store.Name = req.Name
-	store.Description = req.Description
+	// Update only provided fields
+	if req.Name != nil {
+		store.Name = *req.Name
+	}
+	if req.Description != nil {
+		store.Description = *req.Description
+	}
+	if req.PhotoURL != nil {
+		store.PhotoURL = *req.PhotoURL
+	}
 
 	if err := u.storeRepo.Update(store); err != nil {
 		return nil, errors.New("failed to update store")

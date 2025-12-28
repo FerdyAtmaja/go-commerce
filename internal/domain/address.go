@@ -48,12 +48,12 @@ type CreateAddressRequest struct {
 }
 
 type UpdateAddressRequest struct {
-	JudulAlamat  string `json:"judul_alamat" validate:"required,min=2,max=255"`
-	NamaPenerima string `json:"nama_penerima" validate:"required,min=2,max=255"`
-	NoTelp       string `json:"notelp" validate:"omitempty,min=10,max=20"`
-	DetailAlamat string `json:"detail_alamat" validate:"required"`
-	KodePos      string `json:"kode_pos" validate:"omitempty,max=10"`
-	IsDefault    bool   `json:"is_default"`
+	JudulAlamat  *string `json:"judul_alamat,omitempty" validate:"omitempty,min=2,max=255"`
+	NamaPenerima *string `json:"nama_penerima,omitempty" validate:"omitempty,min=2,max=255"`
+	NoTelp       *string `json:"notelp,omitempty" validate:"omitempty,min=10,max=20"`
+	DetailAlamat *string `json:"detail_alamat,omitempty" validate:"omitempty,min=2"`
+	KodePos      *string `json:"kode_pos,omitempty" validate:"omitempty,max=10"`
+	IsDefault    *bool   `json:"is_default,omitempty"`
 }
 
 // Province and City structures matching Indonesia API

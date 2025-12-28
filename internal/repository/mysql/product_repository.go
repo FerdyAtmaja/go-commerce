@@ -22,8 +22,9 @@ func (r *productRepository) Create(product *domain.Product) error {
 
 func (r *productRepository) GetByID(id uint64) (*domain.Product, error) {
 	var product domain.Product
-	err := r.db.Preload("Toko").Preload("Category").Preload("Photos").
-		Where("id = ?", id).First(&product).Error
+	err := r.db.Preload("Toko").Preload("Category").Preload("Photos", func(db *gorm.DB) *gorm.DB {
+		return db.Order("is_primary DESC, position ASC")
+	}).Where("id = ?", id).First(&product).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("product not found")
@@ -35,8 +36,9 @@ func (r *productRepository) GetByID(id uint64) (*domain.Product, error) {
 
 func (r *productRepository) GetBySlug(slug string) (*domain.Product, error) {
 	var product domain.Product
-	err := r.db.Preload("Toko").Preload("Category").Preload("Photos").
-		Where("slug = ?", slug).First(&product).Error
+	err := r.db.Preload("Toko").Preload("Category").Preload("Photos", func(db *gorm.DB) *gorm.DB {
+		return db.Order("is_primary DESC, position ASC")
+	}).Where("slug = ? AND status = ?", slug, "active").First(&product).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("product not found")
@@ -54,7 +56,7 @@ func (r *productRepository) GetByTokoID(tokoID uint64, limit, offset int, search
 
 	if search != "" {
 		searchPattern := "%" + strings.ToLower(search) + "%"
-		query = query.Where("LOWER(nama_produk) LIKE ? OR LOWER(deskripsi) LIKE ?", searchPattern, searchPattern)
+		query = query.Where("LOWER(nama_produk) LIKE ? OR LOWER(deskripsi) LIKE ? OR LOWER(slug) LIKE ?", searchPattern, searchPattern, searchPattern)
 	}
 
 	// Count total
@@ -63,8 +65,9 @@ func (r *productRepository) GetByTokoID(tokoID uint64, limit, offset int, search
 	}
 
 	// Get products with pagination
-	err := query.Preload("Category").Preload("Photos").
-		Order("created_at DESC").
+	err := query.Preload("Category").Preload("Photos", func(db *gorm.DB) *gorm.DB {
+		return db.Order("is_primary DESC, position ASC")
+	}).Order("created_at DESC").
 		Limit(limit).Offset(offset).
 		Find(&products).Error
 
@@ -91,10 +94,74 @@ func (r *productRepository) GetAll(limit, offset int, search, categoryID string)
 		return nil, 0, err
 	}
 
-	// Get products with pagination
-	err := query.Preload("Toko").Preload("Category").Preload("Photos").
-		Order("created_at DESC").
+	// Get products with pagination and proper indexing
+	err := query.Preload("Toko").Preload("Category").Preload("Photos", func(db *gorm.DB) *gorm.DB {
+		return db.Order("is_primary DESC, position ASC")
+	}).Order("created_at DESC").
 		Limit(limit).Offset(offset).
+		Find(&products).Error
+
+	return products, total, err
+}
+
+// GetAllWithFilter supports advanced filtering and sorting based on migration indexes
+func (r *productRepository) GetAllWithFilter(filter *domain.ProductFilter) ([]*domain.Product, int64, error) {
+	var products []*domain.Product
+	var total int64
+
+	query := r.db.Model(&domain.Product{}).Where("status = ?", "active")
+
+	// Search filter (uses nama_produk and deskripsi)
+	if filter.Search != "" {
+		searchPattern := "%" + strings.ToLower(filter.Search) + "%"
+		query = query.Where("LOWER(nama_produk) LIKE ? OR LOWER(deskripsi) LIKE ?", searchPattern, searchPattern)
+	}
+
+	// Category filter (uses idx_produk_category index)
+	if filter.CategoryID != "" {
+		query = query.Where("id_category = ?", filter.CategoryID)
+	}
+
+	// Price range filter (uses idx_produk_harga_konsumen index)
+	if filter.MinPrice != "" {
+		query = query.Where("harga_konsumen >= ?", filter.MinPrice)
+	}
+	if filter.MaxPrice != "" {
+		query = query.Where("harga_konsumen <= ?", filter.MaxPrice)
+	}
+
+	// Count total
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Apply sorting
+	orderBy := "created_at DESC" // default
+	switch filter.SortBy {
+	case "price_asc":
+		orderBy = "harga_konsumen ASC" // uses idx_produk_harga_konsumen
+	case "price_desc":
+		orderBy = "harga_konsumen DESC" // uses idx_produk_harga_konsumen
+	case "newest":
+		orderBy = "created_at DESC"
+	case "oldest":
+		orderBy = "created_at ASC"
+	case "popular":
+		orderBy = "sold_count DESC" // most sold first
+	case "name_asc":
+		orderBy = "nama_produk ASC"
+	case "name_desc":
+		orderBy = "nama_produk DESC"
+	}
+
+	// Calculate offset
+	offset := (filter.Page - 1) * filter.Limit
+
+	// Get products with pagination
+	err := query.Preload("Toko").Preload("Category").Preload("Photos", func(db *gorm.DB) *gorm.DB {
+		return db.Order("is_primary DESC, position ASC")
+	}).Order(orderBy).
+		Limit(filter.Limit).Offset(offset).
 		Find(&products).Error
 
 	return products, total, err
@@ -174,4 +241,49 @@ func (r *photoProdukRepository) SetPrimary(productID, photoID uint64) error {
 	}
 	
 	return tx.Commit().Error
+}
+
+// GetByStatus gets products by status (uses idx_produk_status index)
+func (r *productRepository) GetByStatus(status string, limit, offset int) ([]*domain.Product, int64, error) {
+	var products []*domain.Product
+	var total int64
+
+	query := r.db.Model(&domain.Product{}).Where("status = ?", status)
+
+	// Count total
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Get products with pagination (uses idx_produk_status index)
+	err := query.Preload("Toko").Preload("Category").Preload("Photos", func(db *gorm.DB) *gorm.DB {
+		return db.Order("is_primary DESC, position ASC")
+	}).Order("created_at DESC").
+		Limit(limit).Offset(offset).
+		Find(&products).Error
+
+	return products, total, err
+}
+
+// SearchBySlug searches products by partial slug match
+func (r *productRepository) SearchBySlug(slugPattern string, limit, offset int) ([]*domain.Product, int64, error) {
+	var products []*domain.Product
+	var total int64
+
+	searchPattern := "%" + strings.ToLower(slugPattern) + "%"
+	query := r.db.Model(&domain.Product{}).Where("status = ? AND LOWER(slug) LIKE ?", "active", searchPattern)
+
+	// Count total
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Get products with pagination
+	err := query.Preload("Toko").Preload("Category").Preload("Photos", func(db *gorm.DB) *gorm.DB {
+		return db.Order("is_primary DESC, position ASC")
+	}).Order("created_at DESC").
+		Limit(limit).Offset(offset).
+		Find(&products).Error
+
+	return products, total, err
 }

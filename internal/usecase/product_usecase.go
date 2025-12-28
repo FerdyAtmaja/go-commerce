@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"errors"
-	"fmt"
 
 	"go-commerce/internal/domain"
 	"go-commerce/pkg/utils"
@@ -42,21 +41,12 @@ func (u *ProductUsecase) CreateProduct(userID uint64, req *domain.CreateProductR
 		return nil, errors.New("category not found")
 	}
 
-	// Generate slug from product name
-	slug := utils.GenerateSlug(req.NamaProduk)
-	
-	// Check if slug already exists, if yes, append number
-	originalSlug := slug
-	counter := 1
-	for {
-		_, err := u.productRepo.GetBySlug(slug)
-		if err != nil {
-			// Slug not found, we can use it
-			break
-		}
-		slug = fmt.Sprintf("%s-%d", originalSlug, counter)
-		counter++
-	}
+	// Generate unique slug from product name
+	baseSlug := utils.GenerateSlug(req.NamaProduk)
+	slug := utils.EnsureUniqueSlug(baseSlug, func(s string) bool {
+		_, err := u.productRepo.GetBySlug(s)
+		return err == nil // true if slug exists
+	})
 
 	product := &domain.Product{
 		NamaProduk:    req.NamaProduk,
@@ -67,12 +57,18 @@ func (u *ProductUsecase) CreateProduct(userID uint64, req *domain.CreateProductR
 		Deskripsi:     req.Deskripsi,
 		IDToko:        store.ID,
 		IDCategory:    req.IDCategory,
-		Status:        "active",
+		Status:        getProductStatus(req.Status),
 		Berat:         req.Berat,
 		SoldCount:     0,
 	}
 
 	err = u.productRepo.Create(product)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the created product with all relations
+	createdProduct, err := u.productRepo.GetByID(product.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +79,7 @@ func (u *ProductUsecase) CreateProduct(userID uint64, req *domain.CreateProductR
 		// updateSearchIndex(product.ID, product.NamaProduk)
 	}()
 
-	return product, nil
+	return createdProduct, nil
 }
 
 func (u *ProductUsecase) GetProductByID(id uint64) (*domain.Product, error) {
@@ -98,6 +94,18 @@ func (u *ProductUsecase) GetProductByID(id uint64) (*domain.Product, error) {
 
 func (u *ProductUsecase) GetProductBySlug(slug string) (*domain.Product, error) {
 	return u.productRepo.GetBySlug(slug)
+}
+
+func (u *ProductUsecase) SearchProductsBySlug(slugPattern string, page, limit int) ([]*domain.Product, int64, error) {
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 10
+	}
+
+	offset := (page - 1) * limit
+	return u.productRepo.SearchBySlug(slugPattern, limit, offset)
 }
 
 func (u *ProductUsecase) GetMyProducts(userID uint64, page, limit int, search string) ([]*domain.Product, int64, error) {
@@ -126,6 +134,13 @@ func (u *ProductUsecase) GetAllProducts(filter *domain.ProductFilter) ([]*domain
 		filter.Limit = 10
 	}
 
+	// Use advanced filtering if available, otherwise fallback to basic
+	if filter.MinPrice != "" || filter.MaxPrice != "" || 
+	   (filter.SortBy != "" && filter.SortBy != "newest") {
+		return u.productRepo.GetAllWithFilter(filter)
+	}
+
+	// Fallback to basic filtering
 	offset := (filter.Page - 1) * filter.Limit
 	return u.productRepo.GetAll(filter.Limit, offset, filter.Search, filter.CategoryID)
 }
@@ -166,27 +181,18 @@ func (u *ProductUsecase) UpdateProduct(userID, productID uint64, req *domain.Upd
 	product.Deskripsi = req.Deskripsi
 	product.IDCategory = req.IDCategory
 	product.Berat = req.Berat
+	if req.Status != "" {
+		product.Status = req.Status
+	}
 
 	// Update slug if name changed
 	if nameChanged {
-		newSlug := utils.GenerateSlug(req.NamaProduk)
-		
-		// Check if new slug conflicts with existing products (excluding current product)
-		existingProduct, err := u.productRepo.GetBySlug(newSlug)
-		if err == nil && existingProduct.ID != productID {
-			// Slug exists, append number
-			originalSlug := newSlug
-			counter := 1
-			for {
-				newSlug = fmt.Sprintf("%s-%d", originalSlug, counter)
-				existingProduct, err := u.productRepo.GetBySlug(newSlug)
-				if err != nil || existingProduct.ID == productID {
-					break
-				}
-				counter++
-			}
-		}
-		product.Slug = newSlug
+		baseSlug := utils.GenerateSlug(req.NamaProduk)
+		slug := utils.EnsureUniqueSlug(baseSlug, func(s string) bool {
+			existingProduct, err := u.productRepo.GetBySlug(s)
+			return err == nil && existingProduct.ID != productID // true if slug exists and not current product
+		})
+		product.Slug = slug
 	}
 
 	err = u.productRepo.Update(product)
@@ -194,7 +200,8 @@ func (u *ProductUsecase) UpdateProduct(userID, productID uint64, req *domain.Upd
 		return nil, err
 	}
 
-	return product, nil
+	// Return updated product with all relations
+	return u.productRepo.GetByID(productID)
 }
 
 func (u *ProductUsecase) DeleteProduct(userID, productID uint64) error {
@@ -232,7 +239,7 @@ func (u *ProductUsecase) AddProductPhoto(userID, productID uint64, photoURL stri
 		return nil, err
 	}
 
-	position := len(existingPhotos) + 1
+	position := int64(len(existingPhotos) + 1)
 
 	photo := &domain.PhotoProduk{
 		IDProduk:  productID,
@@ -287,5 +294,26 @@ func (u *ProductUsecase) DeleteProductPhoto(userID, productID, photoID uint64) e
 	}
 
 	return u.photoRepo.Delete(photoID)
+}
+
+// Helper function to get product status with default
+func getProductStatus(status string) string {
+	if status == "" {
+		return "active"
+	}
+	return status
+}
+
+// GetProductsByStatus gets products by status (admin only)
+func (u *ProductUsecase) GetProductsByStatus(status string, page, limit int) ([]*domain.Product, int64, error) {
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 10
+	}
+
+	offset := (page - 1) * limit
+	return u.productRepo.GetByStatus(status, limit, offset)
 }
 

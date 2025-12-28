@@ -4,6 +4,7 @@ import (
 	"go-commerce/internal/domain"
 	"go-commerce/internal/usecase"
 	"go-commerce/internal/handler/response"
+	"go-commerce/internal/handler/middleware"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -32,7 +33,7 @@ func NewTransactionHandler(transactionUsecase *usecase.TransactionUsecase) *Tran
 // @Failure 401 {object} response.Response "Unauthorized"
 // @Router /transactions [post]
 func (h *TransactionHandler) CreateTransaction(c *fiber.Ctx) error {
-	userID := c.Locals("user_id").(uint64)
+	userID := middleware.GetUserID(c)
 
 	var req domain.CreateTransactionRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -61,7 +62,7 @@ func (h *TransactionHandler) CreateTransaction(c *fiber.Ctx) error {
 // @Failure 404 {object} response.Response "Transaction not found"
 // @Router /transactions/{id} [get]
 func (h *TransactionHandler) GetTransactionByID(c *fiber.Ctx) error {
-	userID := c.Locals("user_id").(uint64)
+	userID := middleware.GetUserID(c)
 	
 	transactionID, err := strconv.ParseUint(c.Params("id"), 10, 64)
 	if err != nil {
@@ -90,7 +91,7 @@ func (h *TransactionHandler) GetTransactionByID(c *fiber.Ctx) error {
 // @Failure 500 {object} response.Response "Internal server error"
 // @Router /transactions/my [get]
 func (h *TransactionHandler) GetMyTransactions(c *fiber.Ctx) error {
-	userID := c.Locals("user_id").(uint64)
+	userID := middleware.GetUserID(c)
 
 	page, _ := strconv.Atoi(c.Query("page", "1"))
 	limit, _ := strconv.Atoi(c.Query("limit", "10"))

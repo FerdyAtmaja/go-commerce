@@ -156,6 +156,58 @@ const docTemplate = `{
                 }
             }
         },
+        "/addresses/default": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get the default address for the authenticated user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Addresses"
+                ],
+                "summary": "Get default address",
+                "responses": {
+                    "200": {
+                        "description": "Default address retrieved successfully",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/domain.Address"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "No default address found",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/addresses/{id}": {
             "get": {
                 "security": [
@@ -325,6 +377,61 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "Address deleted successfully",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Address not found",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/addresses/{id}/default": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Set an address as default for the authenticated user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Addresses"
+                ],
+                "summary": "Set default address",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Address ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Default address set successfully",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -547,7 +654,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Create a new product category (admin only)",
+                "description": "Create a new product category (admin only). For root category, omit parent_id or set to null. For subcategory, provide parent_id.",
                 "consumes": [
                     "application/json"
                 ],
@@ -560,7 +667,7 @@ const docTemplate = `{
                 "summary": "Create a new category",
                 "parameters": [
                     {
-                        "description": "Category creation request",
+                        "description": "Category creation request. For root category: {\\",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -602,6 +709,116 @@ const docTemplate = `{
                     },
                     "403": {
                         "description": "Forbidden - admin only",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/categories/root": {
+            "get": {
+                "description": "Get all root categories (categories without parent) with pagination (public endpoint)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Get root categories",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Items per page",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Root categories retrieved successfully",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.PaginatedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/domain.Category"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/categories/slug/{slug}": {
+            "get": {
+                "description": "Get a single category by its slug (public endpoint)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Get category by slug",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Category Slug",
+                        "name": "slug",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Category retrieved successfully",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/domain.Category"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Category not found",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -792,6 +1009,65 @@ const docTemplate = `{
                 }
             }
         },
+        "/categories/{id}/children": {
+            "get": {
+                "description": "Get all children categories of a parent category (public endpoint)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Get children categories",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Parent Category ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Children categories retrieved successfully",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/domain.Category"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid parent category ID",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Parent category not found",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/products": {
             "get": {
                 "description": "Get all products with pagination and filtering (public endpoint)",
@@ -834,8 +1110,20 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "description": "Minimum price filter",
+                        "name": "min_price",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Maximum price filter",
+                        "name": "max_price",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "default": "newest",
-                        "description": "Sort by: newest, oldest, price_asc, price_desc",
+                        "description": "Sort by: newest, oldest, price_asc, price_desc, popular, name_asc, name_desc",
                         "name": "sort_by",
                         "in": "query"
                     }
@@ -1009,9 +1297,76 @@ const docTemplate = `{
                 }
             }
         },
+        "/products/search/slug": {
+            "get": {
+                "description": "Search products by partial slug match with pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Search products by slug pattern",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Slug pattern to search",
+                        "name": "slug",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Items per page",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Products found successfully",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.PaginatedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/domain.Product"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/products/slug/{slug}": {
             "get": {
-                "description": "Get a single product by its slug (public endpoint)",
+                "description": "Get a single product by its exact slug (public endpoint)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1058,6 +1413,90 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Product not found",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/products/status": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get products filtered by status with pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Get products by status (Admin only)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Product status: active or inactive",
+                        "name": "status",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Items per page",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Products retrieved successfully",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.PaginatedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/domain.Product"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - admin only",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -2161,41 +2600,41 @@ const docTemplate = `{
         "domain.Address": {
             "type": "object",
             "required": [
-                "city_id",
-                "detail",
-                "name",
-                "phone",
-                "postal_code",
-                "province_id"
+                "detail_alamat",
+                "judul_alamat",
+                "nama_penerima"
             ],
             "properties": {
-                "city_id": {
-                    "type": "string"
-                },
                 "created_at": {
                     "type": "string"
                 },
-                "detail": {
+                "detail_alamat": {
                     "type": "string"
                 },
                 "id": {
                     "type": "integer"
                 },
-                "name": {
+                "is_default": {
+                    "type": "boolean"
+                },
+                "judul_alamat": {
                     "type": "string",
-                    "maxLength": 100,
+                    "maxLength": 255,
                     "minLength": 2
                 },
-                "phone": {
+                "kode_pos": {
                     "type": "string",
-                    "maxLength": 15,
+                    "maxLength": 10
+                },
+                "nama_penerima": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 2
+                },
+                "notelp": {
+                    "type": "string",
+                    "maxLength": 20,
                     "minLength": 10
-                },
-                "postal_code": {
-                    "type": "string"
-                },
-                "province_id": {
-                    "type": "string"
                 },
                 "updated_at": {
                     "type": "string"
@@ -2302,35 +2741,35 @@ const docTemplate = `{
         "domain.CreateAddressRequest": {
             "type": "object",
             "required": [
-                "city_id",
-                "detail",
-                "name",
-                "phone",
-                "postal_code",
-                "province_id"
+                "detail_alamat",
+                "judul_alamat",
+                "nama_penerima"
             ],
             "properties": {
-                "city_id": {
+                "detail_alamat": {
                     "type": "string"
                 },
-                "detail": {
-                    "type": "string"
+                "is_default": {
+                    "type": "boolean"
                 },
-                "name": {
+                "judul_alamat": {
                     "type": "string",
-                    "maxLength": 100,
+                    "maxLength": 255,
                     "minLength": 2
                 },
-                "phone": {
+                "kode_pos": {
                     "type": "string",
-                    "maxLength": 15,
+                    "maxLength": 10
+                },
+                "nama_penerima": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 2
+                },
+                "notelp": {
+                    "type": "string",
+                    "maxLength": 20,
                     "minLength": 10
-                },
-                "postal_code": {
-                    "type": "string"
-                },
-                "province_id": {
-                    "type": "string"
                 }
             }
         },
@@ -2346,7 +2785,8 @@ const docTemplate = `{
                     "minLength": 2
                 },
                 "parent_id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 0
                 }
             }
         },
@@ -2381,6 +2821,13 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 255,
                     "minLength": 2
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "inactive"
+                    ]
                 },
                 "stok": {
                     "type": "integer",
@@ -2423,7 +2870,13 @@ const docTemplate = `{
                     }
                 },
                 "metode_bayar": {
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "transfer",
+                        "cod",
+                        "ewallet",
+                        "credit_card"
+                    ]
                 }
             }
         },
@@ -2531,7 +2984,11 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "status": {
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "inactive"
+                    ]
                 },
                 "stok": {
                     "type": "integer"
@@ -2696,13 +3153,26 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "metode_bayar": {
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "transfer",
+                        "cod",
+                        "ewallet",
+                        "credit_card"
+                    ]
                 },
                 "paid_at": {
                     "type": "string"
                 },
-                "status": {
-                    "type": "string"
+                "status_pembayaran": {
+                    "type": "string",
+                    "enum": [
+                        "pending",
+                        "paid",
+                        "cancelled",
+                        "shipped",
+                        "done"
+                    ]
                 },
                 "transaction_items": {
                     "type": "array",
@@ -2777,36 +3247,32 @@ const docTemplate = `{
         },
         "domain.UpdateAddressRequest": {
             "type": "object",
-            "required": [
-                "city_id",
-                "detail",
-                "name",
-                "phone",
-                "postal_code",
-                "province_id"
-            ],
             "properties": {
-                "city_id": {
-                    "type": "string"
-                },
-                "detail": {
-                    "type": "string"
-                },
-                "name": {
+                "detail_alamat": {
                     "type": "string",
-                    "maxLength": 100,
                     "minLength": 2
                 },
-                "phone": {
+                "is_default": {
+                    "type": "boolean"
+                },
+                "judul_alamat": {
                     "type": "string",
-                    "maxLength": 15,
+                    "maxLength": 255,
+                    "minLength": 2
+                },
+                "kode_pos": {
+                    "type": "string",
+                    "maxLength": 10
+                },
+                "nama_penerima": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 2
+                },
+                "notelp": {
+                    "type": "string",
+                    "maxLength": 20,
                     "minLength": 10
-                },
-                "postal_code": {
-                    "type": "string"
-                },
-                "province_id": {
-                    "type": "string"
                 }
             }
         },
@@ -2822,7 +3288,8 @@ const docTemplate = `{
                     "minLength": 2
                 },
                 "parent_id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1
                 }
             }
         },
@@ -2857,6 +3324,13 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 255,
                     "minLength": 2
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "inactive"
+                    ]
                 },
                 "stok": {
                     "type": "integer",
@@ -2903,9 +3377,6 @@ const docTemplate = `{
         },
         "domain.UpdateStoreRequest": {
             "type": "object",
-            "required": [
-                "name"
-            ],
             "properties": {
                 "description": {
                     "type": "string"
@@ -2914,6 +3385,9 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 100,
                     "minLength": 2
+                },
+                "url_foto": {
+                    "type": "string"
                 }
             }
         },

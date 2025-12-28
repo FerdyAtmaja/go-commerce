@@ -37,8 +37,12 @@ func (u *CategoryUsecase) CreateCategory(req *domain.CreateCategoryRequest) (*do
 		}
 	}
 
-	// Generate slug from name
-	slug := utils.GenerateSlug(req.Name)
+	// Generate unique slug from name
+	baseSlug := utils.GenerateSlug(req.Name)
+	slug := utils.EnsureUniqueSlug(baseSlug, func(s string) bool {
+		_, err := u.categoryRepo.GetBySlug(s)
+		return err == nil // true if slug exists
+	})
 
 	category := &domain.Category{
 		Name:     req.Name,
@@ -90,7 +94,12 @@ func (u *CategoryUsecase) UpdateCategory(id uint64, req *domain.UpdateCategoryRe
 	category.ParentID = req.ParentID
 	// Update slug if name changed
 	if req.Name != originalName {
-		category.Slug = utils.GenerateSlug(req.Name)
+		baseSlug := utils.GenerateSlug(req.Name)
+		slug := utils.EnsureUniqueSlug(baseSlug, func(s string) bool {
+			existingCategory, err := u.categoryRepo.GetBySlug(s)
+			return err == nil && existingCategory.ID != id // true if slug exists and not current category
+		})
+		category.Slug = slug
 	}
 
 	if err := u.categoryRepo.Update(category); err != nil {

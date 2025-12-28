@@ -41,6 +41,7 @@ type CreateStoreRequest struct {
 }
 
 type UpdateStoreRequest struct {
-	Name        string `json:"name" validate:"required,min=2,max=100"`
-	Description string `json:"description"`
+	Name        *string `json:"name,omitempty" validate:"omitempty,min=2,max=100"`
+	Description *string `json:"description,omitempty"`
+	PhotoURL    *string `json:"url_foto,omitempty"`
 }

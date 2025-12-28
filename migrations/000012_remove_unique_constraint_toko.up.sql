@@ -1,0 +1,1 @@
+ALTER TABLE toko DROP INDEX id_user;

@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -14,5 +15,18 @@ func GenerateSlug(text string) string {
 	slug = reg.ReplaceAllString(slug, "-")
 	// Remove leading/trailing hyphens
 	slug = strings.Trim(slug, "-")
+	return slug
+}
+
+// EnsureUniqueSlug generates a unique slug by appending counter if duplicate exists
+func EnsureUniqueSlug(baseSlug string, checkExists func(string) bool) string {
+	slug := baseSlug
+	counter := 1
+	
+	for checkExists(slug) {
+		slug = fmt.Sprintf("%s-%d", baseSlug, counter)
+		counter++
+	}
+	
 	return slug
 }
