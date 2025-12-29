@@ -1,0 +1,1043 @@
+{
+	"info": {
+		"_postman_id": "5ebc6fc8-1571-4ed5-bf86-646420b40444",
+		"name": "Rakamain Evermos Virtual Internship",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "45892991",
+		"_collection_link": "https://ferdyatmaja.postman.co/workspace/Ferdy-Atmaja's-Workspace~d9a2f552-5109-48e4-8d5e-3acded9c107e/collection/45892991-5ebc6fc8-1571-4ed5-bf86-646420b40444?action=share&source=collection_link&creator=45892991"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "POST Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"",
+									"const res = pm.response.json();",
+									"",
+									"pm.test(\"Access token exists\", () => {",
+									"  pm.expect(res.data.access_token).to.exist;",
+									"});",
+									"",
+									"pm.environment.set(\"access_token\", res.data.access_token);",
+									"pm.environment.set(\"refresh_token\", res.data.refresh_token);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@gmail.com\",\n  \"password\": \"password\"\n}"
+						},
+						"url": "{{local}}/auth/login"
+					},
+					"response": []
+				},
+				{
+					"name": "POST Register",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"",
+									"/* Status code yang valid */",
+									"pm.test(\"Status code is valid\", () => {",
+									"  pm.expect(pm.response.code).to.be.oneOf([201, 400]);",
+									"});",
+									"",
+									"/* Struktur response */",
+									"pm.test(\"Response has status and message\", () => {",
+									"  pm.expect(res).to.have.property(\"status\");",
+									"  pm.expect(res).to.have.property(\"message\");",
+									"});",
+									"",
+									"/* Test khusus jika sukses */",
+									"if (pm.response.code === 201 && res.data?.user) {",
+									"  pm.test(\"User created successfully\", () => {",
+									"    pm.expect(res.status).to.eql(\"success\");",
+									"    pm.expect(res.data.user).to.have.property(\"email\");",
+									"  });",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"User Test\",\n  \"email\": \"user@test.com\",\n  \"password\": \"password\",\n  \"phone\": \"08123456789\",\n  \"date_of_birth\": \"1999-01-01\"\n}"
+						},
+						"url": "{{local}}/auth/register"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Category",
+			"item": [
+				{
+					"name": "GET Get All Category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"",
+									"const res = pm.response.json();",
+									"",
+									"pm.test(\"Data is array\", () => {",
+									"  pm.expect(res.data).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{local}}/categories?page=1&limit=10",
+							"host": [
+								"{{local}}"
+							],
+							"path": [
+								"categories"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST Create Category (Admin)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"",
+									"/* Status code yang valid untuk Create Category */",
+									"pm.test(\"Status code is valid\", () => {",
+									"  pm.expect(pm.response.code).to.be.oneOf([201, 400, 401, 403, 409]);",
+									"});",
+									"",
+									"pm.test(\"Response has status and message\", () => {",
+									"  pm.expect(res).to.have.property(\"status\");",
+									"  pm.expect(res).to.have.property(\"message\");",
+									"});",
+									"",
+									"/* Simpan category_id hanya jika sukses */",
+									"if (pm.response.code === 201 && res.data?.id) {",
+									"  pm.environment.set(\"category_id\", res.data.id);",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Electronics\",\n  \"parent_id\": null\n}"
+						},
+						"url": "{{local}}/categories"
+					},
+					"response": []
+				},
+				{
+					"name": "GET Get Category By ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"",
+									"pm.test(\"Status code is valid\", () => {",
+									"  pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+									"});",
+									"",
+									"pm.test(\"Response has status and message\", () => {",
+									"  pm.expect(res).to.have.property(\"status\");",
+									"  pm.expect(res).to.have.property(\"message\");",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"  pm.test(\"Category data exists\", () => {",
+									"    pm.expect(res.data).to.have.property(\"id\");",
+									"  });",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{local}}/categories/{{category_id}}"
+					},
+					"response": []
+				},
+				{
+					"name": "PUT Update Category (Admin)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"",
+									"pm.test(\"Status code is valid\", () => {",
+									"  pm.expect(pm.response.code).to.be.oneOf([200, 400, 401, 403, 404]);",
+									"});",
+									"",
+									"pm.test(\"Response has status and message\", () => {",
+									"  pm.expect(res).to.have.property(\"status\");",
+									"  pm.expect(res).to.have.property(\"message\");",
+									"});",
+									"",
+									"/* HANYA TEST DATA JIKA UPDATE BERHASIL */",
+									"if (pm.response.code === 200 && res.data) {",
+									"  pm.test(\"Category updated correctly\", () => {",
+									"    pm.expect(res.data).to.have.property(\"name\");",
+									"  });",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Updated Electronics\",\n  \"parent_id\": null\n}"
+						},
+						"url": "{{local}}/categories/{{category_id}}"
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE Delete Category (Admin)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();\r",
+									"\r",
+									"pm.test(\"Status code is valid\", () => {\r",
+									"  pm.expect(pm.response.code).to.be.oneOf([200, 401, 403, 404]);\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Response has status and message\", () => {\r",
+									"  pm.expect(res).to.have.property(\"status\");\r",
+									"  pm.expect(res).to.have.property(\"message\");\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": "{{local}}/categories/{{category_id}}"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Alamat Kirim",
+			"item": [
+				{
+					"name": "GET Get My Alamat",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', () => pm.response.to.have.status(200));",
+									"pm.expect(pm.response.json().data).to.be.an('array');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{local}}/addresses?page=1&limit=10",
+							"host": [
+								"{{local}}"
+							],
+							"path": [
+								"addresses"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST Post Alamat",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 201', () => pm.response.to.have.status(201));",
+									"pm.environment.set('address_id', pm.response.json().data.id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"judul_alamat\": \"Rumah\",\n  \"nama_penerima\": \"Budi\",\n  \"notelp\": \"08123456789\",\n  \"province_id\": \"11\",\n  \"city_id\": \"1101\",\n  \"detail_alamat\": \"Jl Mawar No 1\",\n  \"kode_pos\": \"60111\",\n  \"is_default\": true\n}"
+						},
+						"url": "{{local}}/addresses"
+					},
+					"response": []
+				},
+				{
+					"name": "GET Get Alamat By ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', () => pm.response.to.have.status(200));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": "{{local}}/addresses/{{address_id}}"
+					},
+					"response": []
+				},
+				{
+					"name": "PUT Update Alamat By ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', () => pm.response.to.have.status(200));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"detail_alamat\": \"Jl Mawar No 99\",\n  \"is_default\": false\n}"
+						},
+						"url": "{{local}}/addresses/{{address_id}}"
+					},
+					"response": []
+				},
+				{
+					"name": "PUT Set Default Alamat",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', () => pm.response.to.have.status(200));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": "{{local}}/addresses/{{address_id}}/default"
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE Delete Alamat By ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', () => pm.response.to.have.status(200));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": "{{local}}/addresses/{{address_id}}"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Toko",
+			"item": [
+				{
+					"name": "GET Get All Toko",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', () => pm.response.to.have.status(200));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{local}}/stores?page=1&limit=10",
+							"host": [
+								"{{local}}"
+							],
+							"path": [
+								"stores"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST Create Toko",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"",
+									"pm.test(\"Status code is valid\", () => {",
+									"  pm.expect(pm.response.code).to.be.oneOf([201, 400, 401, 409]);",
+									"});",
+									"",
+									"/* SIMPAN ID HANYA JIKA ADA */",
+									"if (pm.response.code === 201 && res.data?.id) {",
+									"  pm.environment.set(\"store_id\", res.data.id);",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Toko Jaya\",\n  \"description\": \"Menjual elektronik\",\n  \"url_foto\": \"https://example.com/logo.png\"\n}"
+						},
+						"url": "{{local}}/stores"
+					},
+					"response": []
+				},
+				{
+					"name": "GET Get My Toko",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', () => pm.response.to.have.status(200));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": "{{local}}/stores/my"
+					},
+					"response": []
+				},
+				{
+					"name": "PUT Update Profile Toko",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', () => pm.response.to.have.status(200));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"description\": \"Update deskripsi toko\"\n}"
+						},
+						"url": "{{local}}/stores/my"
+					},
+					"response": []
+				},
+				{
+					"name": "PUT Activate Toko",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200 or 409', () => pm.expect([200,409]).to.include(pm.response.code));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": "{{local}}/stores/my/activate"
+					},
+					"response": []
+				},
+				{
+					"name": "GET Get Toko By ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', () => pm.response.to.have.status(200));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{local}}/stores/{{store_id}}"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Products",
+			"item": [
+				{
+					"name": "Get All Products (Public)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', () => pm.response.code === 200);",
+									"pm.test('Has data array', () => pm.response.json().data !== undefined);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{local}}/products?page=1&limit=10",
+							"host": [
+								"{{local}}"
+							],
+							"path": [
+								"products"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Product (Seller)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"",
+									"if (res.data?.id) {",
+									"  pm.environment.set(\"product_id\", res.data.id);",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_seller}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nama_produk\": \"Sepatu Lari\",\n  \"deskripsi\": \"Ringan dan nyaman\",\n  \"harga_konsumen\": 250000,\n  \"harga_reseller\": 230000,\n  \"stok\": 10,\n  \"berat\": 500,\n  \"id_category\": 1,\n  \"status\": \"active\"\n}"
+						},
+						"url": "{{local}}/products"
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Products (Seller)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_seller}}"
+							}
+						],
+						"url": "{{local}}/products/my"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Product (Seller)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_seller}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"stok\": 20,\n  \"harga_konsumen\": 260000\n}"
+						},
+						"url": "{{local}}/products/{{product_id}}"
+					},
+					"response": []
+				},
+				{
+					"name": "Suspend Product (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							}
+						],
+						"url": "{{local}}/admin/products/{{product_id}}/suspend"
+					},
+					"response": []
+				},
+				{
+					"name": "Unsuspend Product (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_admin}}"
+							}
+						],
+						"url": "{{local}}/admin/products/{{product_id}}/unsuspend"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Product by ID (Public)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{local}}/products/{{product_id}}"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Product (Seller)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_seller}}"
+							}
+						],
+						"url": "{{local}}/products/{{product_id}}"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Transactions",
+			"item": [
+				{
+					"name": "Create Transaction (User)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();\r",
+									"\r",
+									"if (res.data?.id) {\r",
+									"  pm.environment.set(\"transaction_id\", res.data.id);\r",
+									"}\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_user}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"alamat_pengiriman\": 1,\n  \"metode_bayar\": \"transfer\",\n  \"items\": [\n    { \"product_id\": {{product_id}}, \"quantity\": 1 }\n  ]\n}"
+						},
+						"url": "{{local}}/transactions"
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Transactions (User)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_user}}"
+							}
+						],
+						"url": "{{local}}/transactions/my"
+					},
+					"response": []
+				},
+				{
+					"name": "Process Transaction (Seller)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_seller}}"
+							}
+						],
+						"url": "{{local}}/seller/transactions/{{transaction_id}}/process"
+					},
+					"response": []
+				},
+				{
+					"name": "Ship Transaction (Seller)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token_seller}}"
+							}
+						],
+						"url": "{{local}}/seller/transactions/{{transaction_id}}/ship"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Province City",
+			"item": [
+				{
+					"name": "Get All Provinces",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();\r",
+									"\r",
+									"pm.test(\"Status code is valid\", () => {\r",
+									"  pm.expect(pm.response.code).to.be.oneOf([200, 400]);\r",
+									"});\r",
+									"\r",
+									"if (pm.response.code === 200) {\r",
+									"  pm.test(\"Province list exists\", () => {\r",
+									"    pm.expect(res.data).to.be.an(\"array\");\r",
+									"  });\r",
+									"\r",
+									"  if (res.data.length > 0) {\r",
+									"    pm.environment.set(\"province_id\", res.data[0].id);\r",
+									"  }\r",
+									"}\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{local}}/regions/provinces"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Cities By Province Id",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();\r",
+									"\r",
+									"pm.test(\"Status code is valid\", () => {\r",
+									"  pm.expect(pm.response.code).to.be.oneOf([200, 400]);\r",
+									"});\r",
+									"\r",
+									"if (pm.response.code === 200) {\r",
+									"  pm.test(\"City list exists\", () => {\r",
+									"    pm.expect(res.data).to.be.an(\"array\");\r",
+									"  });\r",
+									"\r",
+									"  /* Simpan city_id pertama */\r",
+									"  if (res.data.length > 0) {\r",
+									"    pm.environment.set(\"city_id\", res.data[0].id);\r",
+									"  }\r",
+									"}\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{local}}/regions/provinces/{{province_id}}/cities"
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
