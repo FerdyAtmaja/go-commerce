@@ -56,7 +56,7 @@ func TestStoreUsecase_GetMyStore_NotFound(t *testing.T) {
 	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "store not found")
+	assert.Contains(t, err.Error(), "STORE_NOT_FOUND")
 
 	mockStoreRepo.AssertExpectations(t)
 }

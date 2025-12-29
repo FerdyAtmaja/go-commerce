@@ -216,7 +216,7 @@ func TestTransactionUsecase_CreateTransaction_Success(t *testing.T) {
 	assert.Equal(t, userID, result.UserID)
 	assert.Equal(t, addressID, result.AlamatPengiriman)
 	assert.Equal(t, "transfer", result.MetodeBayar)
-	assert.Equal(t, "pending", result.PaymentStatus)
+	assert.Equal(t, "pending", result.Status)
 	assert.Equal(t, "created", result.OrderStatus)
 	assert.Equal(t, 20000.0, result.HargaTotal) // 2 * 10000
 

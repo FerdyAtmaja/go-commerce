@@ -190,12 +190,12 @@ func TestProductUsecase_UpdateProduct_Success(t *testing.T) {
 	productID := uint64(1)
 	store := &domain.Store{ID: 1, UserID: userID}
 	req := &domain.UpdateProductRequest{
-		NamaProduk:    "Updated Product",
-		HargaReseller: 20000000,
-		HargaKonsumen: 22000000,
-		Stok:          5,
-		IDCategory:    1,
-		Berat:         300,
+		NamaProduk:    &[]string{"Updated Product"}[0],
+		HargaReseller: &[]float64{20000000}[0],
+		HargaKonsumen: &[]float64{22000000}[0],
+		Stok:          &[]int{5}[0],
+		IDCategory:    &[]uint64{1}[0],
+		Berat:         &[]int{300}[0],
 	}
 
 	// Setup expectations
@@ -208,8 +208,8 @@ func TestProductUsecase_UpdateProduct_Success(t *testing.T) {
 		IDToko:     store.ID,
 		IDCategory: 1,
 	}, nil)
-	categoryRepo.On("GetByID", req.IDCategory).Return(&domain.Category{
-		ID:     req.IDCategory,
+	categoryRepo.On("GetByID", *req.IDCategory).Return(&domain.Category{
+		ID:     *req.IDCategory,
 		Name:   "Electronics",
 		Status: "active",
 		IsLeaf: true,
@@ -217,9 +217,9 @@ func TestProductUsecase_UpdateProduct_Success(t *testing.T) {
 	productRepo.On("GetBySlug", "updated-product").Return(nil, errors.New("not found"))
 	productRepo.On("Update", mock.AnythingOfType("*domain.Product")).Return(nil)
 	productRepo.On("GetByIDForManagement", productID).Return(&domain.Product{
-		NamaProduk: req.NamaProduk,
+		NamaProduk: *req.NamaProduk,
 		Slug:       "updated-product",
-		IDCategory: req.IDCategory,
+		IDCategory: *req.IDCategory,
 	}, nil)
 
 	// Execute
@@ -228,7 +228,7 @@ func TestProductUsecase_UpdateProduct_Success(t *testing.T) {
 	// Assert
 	assert.NoError(t, err)
 	assert.NotNil(t, product)
-	assert.Equal(t, req.NamaProduk, product.NamaProduk)
+	assert.Equal(t, *req.NamaProduk, product.NamaProduk)
 	assert.Equal(t, "updated-product", product.Slug)
 
 	// Verify expectations

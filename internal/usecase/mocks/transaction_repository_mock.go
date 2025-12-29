@@ -86,3 +86,8 @@ func (m *MockTransactionRepository) UpdateOrderStatus(id uint64, orderStatus str
 	args := m.Called(id, orderStatus)
 	return args.Error(0)
 }
+
+func (m *MockTransactionRepository) UpdateStatusWithTx(dbTx interface{}, id uint64, status string) error {
+	args := m.Called(dbTx, id, status)
+	return args.Error(0)
+}

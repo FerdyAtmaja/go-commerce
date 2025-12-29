@@ -119,3 +119,8 @@ func (m *ProductRepositoryMock) UpdateSoldCountWithTx(dbTx interface{}, productI
 	args := m.Called(dbTx, productID, quantity)
 	return args.Error(0)
 }
+
+func (m *ProductRepositoryMock) GetStockWithLock(dbTx interface{}, productID uint64) (int, error) {
+	args := m.Called(dbTx, productID)
+	return args.Get(0).(int), args.Error(1)
+}
