@@ -165,6 +165,19 @@ definitions:
     - id_category
     - nama_produk
     type: object
+  domain.CreateStoreRequest:
+    properties:
+      description:
+        type: string
+      name:
+        maxLength: 255
+        minLength: 2
+        type: string
+      url_foto:
+        type: string
+    required:
+    - name
+    type: object
   domain.CreateTransactionItemRequest:
     properties:
       product_id:
@@ -344,16 +357,19 @@ definitions:
       id:
         type: integer
       name:
-        maxLength: 100
+        maxLength: 255
         minLength: 2
         type: string
       rating:
         type: number
       status:
+        enum:
+        - active
+        - suspended
         type: string
       updated_at:
         type: string
-      url_fotol:
+      url_foto:
         type: string
       user:
         allOf:
@@ -538,8 +554,13 @@ definitions:
       description:
         type: string
       name:
-        maxLength: 100
+        maxLength: 255
         minLength: 2
+        type: string
+      status:
+        enum:
+        - active
+        - suspended
         type: string
       url_foto:
         type: string
@@ -1882,6 +1903,42 @@ paths:
           schema:
             $ref: '#/definitions/response.Response'
       summary: Get all stores
+      tags:
+      - Stores
+    post:
+      consumes:
+      - application/json
+      description: Create a new store for the authenticated user
+      parameters:
+      - description: Store creation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.CreateStoreRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Store created successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.Store'
+              type: object
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Create a new store
       tags:
       - Stores
   /stores/{id}:

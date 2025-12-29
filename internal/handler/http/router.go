@@ -56,6 +56,7 @@ func (r *Router) SetupStoreRoutes(storeUsecase *usecase.StoreUsecase) {
 	stores.Get("/", storeHandler.GetAllStores)
 
 	// Protected routes
+	stores.Post("/", middleware.JWTMiddleware(r.jwtManager), storeHandler.CreateStore)
 	stores.Get("/my", middleware.JWTMiddleware(r.jwtManager), storeHandler.GetMyStore)
 	stores.Put("/my", middleware.JWTMiddleware(r.jwtManager), storeHandler.UpdateMyStore)
 

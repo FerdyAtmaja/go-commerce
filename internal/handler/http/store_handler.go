@@ -134,3 +134,38 @@ func (h *StoreHandler) GetStoreByID(c *fiber.Ctx) error {
 
 	return response.Success(c, "Store retrieved successfully", store)
 }
+
+// CreateStore godoc
+// @Summary Create a new store
+// @Description Create a new store for the authenticated user
+// @Tags Stores
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body domain.CreateStoreRequest true "Store creation request"
+// @Success 201 {object} response.Response{data=domain.Store} "Store created successfully"
+// @Failure 400 {object} response.Response "Bad request"
+// @Failure 401 {object} response.Response "Unauthorized"
+// @Router /stores [post]
+func (h *StoreHandler) CreateStore(c *fiber.Ctx) error {
+	userID := middleware.GetUserID(c)
+	if userID == 0 {
+		return response.Unauthorized(c, "User not authenticated")
+	}
+
+	var req domain.CreateStoreRequest
+	if err := c.BodyParser(&req); err != nil {
+		return response.BadRequest(c, "Invalid request body")
+	}
+
+	if err := h.validator.Struct(&req); err != nil {
+		return response.BadRequest(c, "Validation failed: "+err.Error())
+	}
+
+	store, err := h.storeUsecase.CreateStore(userID, &req)
+	if err != nil {
+		return response.BadRequest(c, err.Error())
+	}
+
+	return response.Created(c, "Store created successfully", store)
+}

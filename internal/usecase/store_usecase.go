@@ -20,18 +20,28 @@ func NewStoreUsecase(storeRepo domain.StoreRepository) *StoreUsecase {
 	}
 }
 
-func (u *StoreUsecase) CreateStore(userID uint64, name string) (*domain.Store, error) {
+func (u *StoreUsecase) CreateStore(userID uint64, req *domain.CreateStoreRequest) (*domain.Store, error) {
+	// Check if user already has a store
+	existingStore, err := u.storeRepo.GetByUserID(userID)
+	if err == nil && existingStore != nil {
+		return nil, errors.New("user already has a store")
+	}
+
 	store := &domain.Store{
 		UserID:      userID,
-		Name:        name,
-		Description: "Welcome to " + name,
+		Name:        req.Name,
+		Description: req.Description,
+		PhotoURL:    req.PhotoURL,
+		Status:      "active",
+		Rating:      0.0,
 	}
 
 	if err := u.storeRepo.Create(store); err != nil {
 		return nil, errors.New("failed to create store")
 	}
 
-	return store, nil
+	// Get created store with relations
+	return u.storeRepo.GetByID(store.ID)
 }
 
 func (u *StoreUsecase) GetMyStore(userID uint64) (*domain.Store, error) {
@@ -65,6 +75,9 @@ func (u *StoreUsecase) UpdateMyStore(userID uint64, req *domain.UpdateStoreReque
 	}
 	if req.PhotoURL != nil {
 		store.PhotoURL = *req.PhotoURL
+	}
+	if req.Status != nil {
+		store.Status = *req.Status
 	}
 
 	if err := u.storeRepo.Update(store); err != nil {
