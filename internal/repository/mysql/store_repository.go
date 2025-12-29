@@ -29,7 +29,7 @@ func (r *storeRepository) GetByID(id uint64) (*domain.Store, error) {
 
 func (r *storeRepository) GetByUserID(userID uint64) (*domain.Store, error) {
 	var store domain.Store
-	err := r.db.Where("id_user = ?", userID).First(&store).Error
+	err := r.db.Where("id_user = ?", userID).Preload("User").First(&store).Error
 	if err != nil {
 		return nil, err
 	}

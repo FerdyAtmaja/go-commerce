@@ -1209,82 +1209,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/callbacks/payment/{id}/failed": {
-            "post": {
-                "description": "Payment gateway callback when payment fails. System use only.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Transactions - Payment Callbacks"
-                ],
-                "summary": "Payment callback - failed (System)",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Transaction ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Payment failure processed successfully",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/callbacks/payment/{id}/paid": {
-            "post": {
-                "description": "Payment gateway callback when payment is successful. System use only.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Transactions - Payment Callbacks"
-                ],
-                "summary": "Payment callback - paid (System)",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Transaction ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Payment processed successfully",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    }
-                }
-            }
-        },
         "/callbacks/payments/{intentId}": {
             "post": {
                 "description": "Receive payment status from payment gateway - updates payment intent",
@@ -4614,15 +4538,6 @@ const docTemplate = `{
                 "paid_at": {
                     "type": "string"
                 },
-                "payment_status": {
-                    "type": "string",
-                    "enum": [
-                        "pending",
-                        "paid",
-                        "failed",
-                        "refunded"
-                    ]
-                },
                 "shipped_at": {
                     "type": "string"
                 },
@@ -4631,6 +4546,8 @@ const docTemplate = `{
                     "enum": [
                         "pending",
                         "paid",
+                        "failed",
+                        "refunded",
                         "cancelled",
                         "shipped",
                         "done"
@@ -4758,12 +4675,6 @@ const docTemplate = `{
         },
         "domain.UpdateProductRequest": {
             "type": "object",
-            "required": [
-                "harga_konsumen",
-                "harga_reseller",
-                "id_category",
-                "nama_produk"
-            ],
             "properties": {
                 "berat": {
                     "type": "integer",

@@ -88,14 +88,14 @@ type CreateProductRequest struct {
 }
 
 type UpdateProductRequest struct {
-	NamaProduk    string  `json:"nama_produk" validate:"required,min=2,max=255"`
-	HargaReseller float64 `json:"harga_reseller" validate:"required,min=0"`
-	HargaKonsumen float64 `json:"harga_konsumen" validate:"required,min=0"`
-	Stok          int     `json:"stok" validate:"min=0"`
-	Deskripsi     string  `json:"deskripsi"`
-	IDCategory    uint64  `json:"id_category" validate:"required"`
-	Berat         int     `json:"berat" validate:"min=0"`
-	Status        string  `json:"status" validate:"omitempty,oneof=active inactive"`
+	NamaProduk    *string  `json:"nama_produk,omitempty" validate:"omitempty,min=2,max=255"`
+	HargaReseller *float64 `json:"harga_reseller,omitempty" validate:"omitempty,min=0"`
+	HargaKonsumen *float64 `json:"harga_konsumen,omitempty" validate:"omitempty,min=0"`
+	Stok          *int     `json:"stok,omitempty" validate:"omitempty,min=0"`
+	Deskripsi     *string  `json:"deskripsi,omitempty"`
+	IDCategory    *uint64  `json:"id_category,omitempty" validate:"omitempty"`
+	Berat         *int     `json:"berat,omitempty" validate:"omitempty,min=0"`
+	Status        *string  `json:"status,omitempty" validate:"omitempty,oneof=active inactive"`
 }
 
 type ProductFilter struct {

@@ -169,47 +169,62 @@ func (u *ProductUsecase) UpdateProduct(userID, productID uint64, req *domain.Upd
 		return nil, err
 	}
 
-	// Get existing product (use management method for seller access)
+	// Get existing product
 	product, err := u.productRepo.GetByIDForManagement(productID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Validate category exists and is active
-	category, err := u.categoryRepo.GetByID(req.IDCategory)
-	if err != nil {
-		return nil, errors.New("category not found")
-	}
-	if category.Status != "active" {
-		return nil, errors.New("invalid category")
-	}
-	if !category.IsLeaf {
-		return nil, errors.New("product must use leaf category")
-	}
-
-	// Check if name changed to update slug
-	nameChanged := product.NamaProduk != req.NamaProduk
-	categoryChanged := product.IDCategory != req.IDCategory
+	// Track changes for category update
 	oldCategoryID := product.IDCategory
+	categoryChanged := false
+	nameChanged := false
 
-	// Update fields
-	product.NamaProduk = req.NamaProduk
-	product.HargaReseller = req.HargaReseller
-	product.HargaKonsumen = req.HargaKonsumen
-	product.Stok = req.Stok
-	product.Deskripsi = req.Deskripsi
-	product.IDCategory = req.IDCategory
-	product.Berat = req.Berat
-	if req.Status != "" {
-		product.Status = req.Status
+	// Update only provided fields
+	if req.NamaProduk != nil {
+		nameChanged = product.NamaProduk != *req.NamaProduk
+		product.NamaProduk = *req.NamaProduk
+	}
+	if req.HargaReseller != nil {
+		product.HargaReseller = *req.HargaReseller
+	}
+	if req.HargaKonsumen != nil {
+		product.HargaKonsumen = *req.HargaKonsumen
+	}
+	if req.Stok != nil {
+		product.Stok = *req.Stok
+	}
+	if req.Deskripsi != nil {
+		product.Deskripsi = *req.Deskripsi
+	}
+	if req.IDCategory != nil {
+		// Validate category exists and is active
+		category, err := u.categoryRepo.GetByID(*req.IDCategory)
+		if err != nil {
+			return nil, errors.New("category not found")
+		}
+		if category.Status != "active" {
+			return nil, errors.New("invalid category")
+		}
+		if !category.IsLeaf {
+			return nil, errors.New("product must use leaf category")
+		}
+		categoryChanged = product.IDCategory != *req.IDCategory
+		product.IDCategory = *req.IDCategory
+	}
+	if req.Berat != nil {
+		product.Berat = *req.Berat
+	}
+	if req.Status != nil {
+		product.Status = *req.Status
 	}
 
 	// Update slug if name changed
 	if nameChanged {
-		baseSlug := utils.GenerateSlug(req.NamaProduk)
+		baseSlug := utils.GenerateSlug(product.NamaProduk)
 		slug := utils.EnsureUniqueSlug(baseSlug, func(s string) bool {
 			existingProduct, err := u.productRepo.GetBySlug(s)
-			return err == nil && existingProduct.ID != productID // true if slug exists and not current product
+			return err == nil && existingProduct.ID != productID
 		})
 		product.Slug = slug
 	}
@@ -223,11 +238,10 @@ func (u *ProductUsecase) UpdateProduct(userID, productID uint64, req *domain.Upd
 	if categoryChanged {
 		go func() {
 			u.categoryRepo.UpdateHasActiveProduct(oldCategoryID)
-			u.categoryRepo.UpdateHasActiveProduct(req.IDCategory)
+			u.categoryRepo.UpdateHasActiveProduct(product.IDCategory)
 		}()
 	}
 
-	// Return updated product with all relations (use management method)
 	return u.productRepo.GetByIDForManagement(productID)
 }
 

@@ -133,6 +133,11 @@ func (h *CategoryHandler) UpdateCategory(c *fiber.Ctx) error {
 		return response.BadRequest(c, "Invalid request body")
 	}
 
+	// Handle parent_id = 0 as root category
+	if req.ParentID != nil && *req.ParentID == 0 {
+		req.ParentID = nil
+	}
+
 	if err := h.validator.Struct(&req); err != nil {
 		return response.BadRequest(c, "Validation failed: "+err.Error())
 	}

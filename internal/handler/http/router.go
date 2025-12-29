@@ -57,7 +57,6 @@ func (r *Router) SetupStoreRoutes(storeUsecase *usecase.StoreUsecase) {
 
 	// Public routes - only show active stores
 	stores.Get("/", storeHandler.GetAllStores)
-	stores.Get("/:id", storeHandler.GetStoreByID)
 
 	// Protected routes
 	jwtMiddleware := middleware.JWTMiddleware(r.jwtManager)
@@ -68,6 +67,9 @@ func (r *Router) SetupStoreRoutes(storeUsecase *usecase.StoreUsecase) {
 	// Store status management (seller only)
 	stores.Put("/my/activate", jwtMiddleware, storeHandler.ActivateStore)
 	stores.Put("/my/deactivate", jwtMiddleware, storeHandler.DeactivateStore)
+
+	// Public route with ID parameter (must be after /my routes)
+	stores.Get("/:id", storeHandler.GetStoreByID)
 
 	// Admin routes
 	admin := api.Group("/admin")
@@ -109,9 +111,11 @@ func (r *Router) SetupAddressRoutes(addressUsecase *usecase.AddressUsecase) {
 	// Protected routes (user can only manage their own addresses)
 	jwtMiddleware := middleware.JWTMiddleware(r.jwtManager)
 	addresses.Get("/", jwtMiddleware, addressHandler.GetMyAddresses)
+	addresses.Get("/default", jwtMiddleware, addressHandler.GetDefaultAddress)
 	addresses.Post("/", jwtMiddleware, addressHandler.CreateAddress)
 	addresses.Get("/:id", jwtMiddleware, addressHandler.GetAddressByID)
 	addresses.Put("/:id", jwtMiddleware, addressHandler.UpdateAddress)
+	addresses.Put("/:id/default", jwtMiddleware, addressHandler.SetDefaultAddress)
 	addresses.Delete("/:id", jwtMiddleware, addressHandler.DeleteAddress)
 
 	// Utility routes for Indonesia regions
@@ -131,7 +135,6 @@ func (r *Router) SetupProductRoutes(productUsecase *usecase.ProductUsecase) {
 	products.Get("/status", middleware.JWTMiddleware(r.jwtManager), middleware.RequireAdmin(), productHandler.GetProductsByStatus)
 	products.Get("/search/slug", productHandler.SearchProductsBySlug)
 	products.Get("/slug/:slug", productHandler.GetProductBySlug)
-	products.Get("/:id", productHandler.GetProductByID)
 
 	// Protected routes (store owner only)
 	jwtMiddleware := middleware.JWTMiddleware(r.jwtManager)
@@ -148,6 +151,9 @@ func (r *Router) SetupProductRoutes(productUsecase *usecase.ProductUsecase) {
 	// Product status management (seller only)
 	products.Put("/:id/activate", jwtMiddleware, productHandler.ActivateProduct)
 	products.Put("/:id/deactivate", jwtMiddleware, productHandler.DeactivateProduct)
+
+	// Public route with ID parameter (must be after /my routes)
+	products.Get("/:id", productHandler.GetProductByID)
 
 	// Admin routes
 	admin := api.Group("/admin")
@@ -167,9 +173,11 @@ func (r *Router) SetupTransactionRoutes(transactionUsecase *usecase.TransactionU
 	jwtMiddleware := middleware.JWTMiddleware(r.jwtManager)
 	transactions.Post("/", jwtMiddleware, transactionHandler.CreateTransaction)
 	transactions.Get("/my", jwtMiddleware, transactionHandler.GetMyTransactions)
-	transactions.Get("/:id", jwtMiddleware, transactionHandler.GetTransactionByID)
 	transactions.Put("/:id/confirm-delivery", jwtMiddleware, transactionHandler.ConfirmDelivered)
 	transactions.Put("/:id/cancel", jwtMiddleware, transactionHandler.CancelTransaction)
+
+	// Transaction by ID (must be after /my routes)
+	transactions.Get("/:id", jwtMiddleware, transactionHandler.GetTransactionByID)
 
 	// Seller operations
 	seller := api.Group("/seller")

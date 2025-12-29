@@ -31,7 +31,7 @@ func (uc *paymentIntentUsecase) CreatePaymentIntent(trxID uint, method string) (
 		return nil, errors.New("transaction not found")
 	}
 	
-	if trx.PaymentStatus != "pending" {
+	if trx.Status != "pending" {
 		return nil, errors.New("transaction is not in pending status")
 	}
 	
@@ -65,11 +65,11 @@ func (uc *paymentIntentUsecase) ProcessPaymentSuccess(intentID uint) error {
 	
 	// Decision table logic
 	switch {
-	case intent.Status == domain.PaymentIntentStatusSuccess && intent.Transaction.PaymentStatus == "paid":
+	case intent.Status == domain.PaymentIntentStatusSuccess && intent.Transaction.Status == "paid":
 		// Idempotent - already processed
 		return nil
 		
-	case intent.Status == domain.PaymentIntentStatusPending && intent.Transaction.PaymentStatus == "pending":
+	case intent.Status == domain.PaymentIntentStatusPending && intent.Transaction.Status == "pending":
 		// Process payment success
 		err = uc.paymentIntentRepo.UpdateStatus(intentID, domain.PaymentIntentStatusSuccess)
 		if err != nil {

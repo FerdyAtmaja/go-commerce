@@ -453,19 +453,14 @@ definitions:
         type: string
       paid_at:
         type: string
-      payment_status:
-        enum:
-        - pending
-        - paid
-        - failed
-        - refunded
-        type: string
       shipped_at:
         type: string
       status_pembayaran:
         enum:
         - pending
         - paid
+        - failed
+        - refunded
         - cancelled
         - shipped
         - done
@@ -577,11 +572,6 @@ definitions:
       stok:
         minimum: 0
         type: integer
-    required:
-    - harga_konsumen
-    - harga_reseller
-    - id_category
-    - nama_produk
     type: object
   domain.UpdateProfileRequest:
     properties:
@@ -1479,57 +1469,6 @@ paths:
       summary: Register a new user (Public)
       tags:
       - Authentication
-  /callbacks/payment/{id}/failed:
-    post:
-      consumes:
-      - application/json
-      description: Payment gateway callback when payment fails. System use only.
-      parameters:
-      - description: Transaction ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Payment failure processed successfully
-          schema:
-            $ref: '#/definitions/response.Response'
-        "400":
-          description: Bad request
-          schema:
-            $ref: '#/definitions/response.Response'
-      summary: Payment callback - failed (System)
-      tags:
-      - Transactions - Payment Callbacks
-  /callbacks/payment/{id}/paid:
-    post:
-      consumes:
-      - application/json
-      description: Payment gateway callback when payment is successful. System use
-        only.
-      parameters:
-      - description: Transaction ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Payment processed successfully
-          schema:
-            $ref: '#/definitions/response.Response'
-        "400":
-          description: Bad request
-          schema:
-            $ref: '#/definitions/response.Response'
-      summary: Payment callback - paid (System)
-      tags:
-      - Transactions - Payment Callbacks
   /callbacks/payments/{intentId}:
     post:
       consumes:

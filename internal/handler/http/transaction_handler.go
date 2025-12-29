@@ -115,54 +115,6 @@ func (h *TransactionHandler) GetMyTransactions(c *fiber.Ctx) error {
 
 
 
-// OnPaymentPaid godoc
-// @Summary Payment callback - paid (System)
-// @Description Payment gateway callback when payment is successful. System use only.
-// @Tags Transactions - Payment Callbacks
-// @Accept json
-// @Produce json
-// @Param id path int true "Transaction ID"
-// @Success 200 {object} response.Response "Payment processed successfully"
-// @Failure 400 {object} response.Response "Bad request"
-// @Router /callbacks/payment/{id}/paid [post]
-func (h *TransactionHandler) OnPaymentPaid(c *fiber.Ctx) error {
-	transactionID, err := strconv.ParseUint(c.Params("id"), 10, 64)
-	if err != nil {
-		return response.BadRequest(c, "Invalid transaction ID")
-	}
-
-	err = h.transactionUsecase.OnPaymentPaid(transactionID)
-	if err != nil {
-		return response.BadRequest(c, err.Error())
-	}
-
-	return response.Success(c, "Payment processed successfully", nil)
-}
-
-// OnPaymentFailed godoc
-// @Summary Payment callback - failed (System)
-// @Description Payment gateway callback when payment fails. System use only.
-// @Tags Transactions - Payment Callbacks
-// @Accept json
-// @Produce json
-// @Param id path int true "Transaction ID"
-// @Success 200 {object} response.Response "Payment failure processed successfully"
-// @Failure 400 {object} response.Response "Bad request"
-// @Router /callbacks/payment/{id}/failed [post]
-func (h *TransactionHandler) OnPaymentFailed(c *fiber.Ctx) error {
-	transactionID, err := strconv.ParseUint(c.Params("id"), 10, 64)
-	if err != nil {
-		return response.BadRequest(c, "Invalid transaction ID")
-	}
-
-	err = h.transactionUsecase.OnPaymentFailed(transactionID)
-	if err != nil {
-		return response.BadRequest(c, err.Error())
-	}
-
-	return response.Success(c, "Payment failure processed successfully", nil)
-}
-
 // ProcessOrder godoc
 // @Summary Process order (Seller)
 // @Description Seller processes order after payment is confirmed. Requires authentication.

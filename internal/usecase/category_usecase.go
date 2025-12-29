@@ -91,31 +91,67 @@ func (u *CategoryUsecase) UpdateCategory(id uint64, req *domain.UpdateCategoryRe
 		return nil, errors.New("failed to get category")
 	}
 
-	// Store original name for comparison
+	// Store original values for comparison
 	originalName := existingCategory.Name
+	originalParentID := existingCategory.ParentID
 
 	// Check if new name already exists (excluding current category)
 	if req.Name != originalName {
-		if existingCategory, err := u.categoryRepo.GetByName(req.Name); err == nil && existingCategory.ID != id {
+		if existingByName, err := u.categoryRepo.GetByName(req.Name); err == nil && existingByName.ID != id {
 			return nil, errors.New("category name already exists")
 		}
+	}
+
+	// Validate parent category if provided and changed
+	if req.ParentID != nil && *req.ParentID != 0 {
+		// Check if parent exists and is active
+		parent, err := u.categoryRepo.GetByID(*req.ParentID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, errors.New("parent category not found")
+			}
+			return nil, errors.New("failed to validate parent category")
+		}
+		if parent.Status != "active" {
+			return nil, errors.New("parent category must be active")
+		}
+		// Prevent circular reference
+		if *req.ParentID == id {
+			return nil, errors.New("category cannot be its own parent")
+		}
+	} else if req.ParentID != nil && *req.ParentID == 0 {
+		// Convert 0 to nil for root category
+		req.ParentID = nil
 	}
 
 	// Update category fields
 	existingCategory.Name = req.Name
 	existingCategory.ParentID = req.ParentID
+
 	// Update slug if name changed
 	if req.Name != originalName {
 		baseSlug := utils.GenerateSlug(req.Name)
 		slug := utils.EnsureUniqueSlug(baseSlug, func(s string) bool {
-			existingCategory, err := u.categoryRepo.GetBySlug(s)
-			return err == nil && existingCategory.ID != id // true if slug exists and not current category
+			existingBySlug, err := u.categoryRepo.GetBySlug(s)
+			return err == nil && existingBySlug.ID != id
 		})
 		existingCategory.Slug = slug
 	}
 
 	if err := u.categoryRepo.Update(existingCategory); err != nil {
 		return nil, errors.New("failed to update category")
+	}
+
+	// Update parent's child flags if parent changed
+	if originalParentID != req.ParentID {
+		go func() {
+			if originalParentID != nil {
+				u.categoryRepo.UpdateChildFlags(*originalParentID)
+			}
+			if req.ParentID != nil {
+				u.categoryRepo.UpdateChildFlags(*req.ParentID)
+			}
+		}()
 	}
 
 	return existingCategory, nil

@@ -48,7 +48,7 @@ func (u *StoreUsecase) GetMyStore(userID uint64) (*domain.Store, error) {
 	store, err := u.storeRepo.GetByUserID(userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("store not found")
+			return nil, errors.New("STORE_NOT_FOUND")
 		}
 		return nil, errors.New("failed to get store")
 	}

@@ -141,9 +141,8 @@ func (u *TransactionUsecase) CreateTransaction(userID uint64, req *domain.Create
 		HargaTotal:       totalAmount,
 		KodeInvoice:      invoiceCode,
 		MetodeBayar:      req.MetodeBayar,
-		PaymentStatus:    "pending",
+		Status:           "pending",
 		OrderStatus:      "created",
-		Status:           "pending", // Keep for backward compatibility
 	}
 
 	err = u.transactionRepo.CreateWithTx(dbTx, transaction)
@@ -229,15 +228,20 @@ func (u *TransactionUsecase) UpdatePaymentStatus(userID, transactionID uint64, s
 	return u.transactionRepo.UpdateStatus(transactionID, status)
 }
 
-// OnPaymentPaid - Payment callback when payment is successful
+// OnPaymentPaid - Used by payment intent system
 func (u *TransactionUsecase) OnPaymentPaid(transactionID uint64) error {
 	transaction, err := u.transactionRepo.GetByID(transactionID)
 	if err != nil {
 		return err
 	}
 
+	// Check if transaction is cancelled
+	if transaction.Status == "cancelled" || transaction.OrderStatus == "cancelled" {
+		return errors.New("transaction cancelled")
+	}
+
 	// Idempotent check
-	if transaction.PaymentStatus != "pending" {
+	if transaction.Status != "pending" {
 		return nil // Already processed
 	}
 
@@ -255,7 +259,7 @@ func (u *TransactionUsecase) OnPaymentPaid(transactionID uint64) error {
 	}()
 
 	// Update payment status
-	err = u.transactionRepo.UpdatePaymentStatus(transactionID, "paid")
+	err = u.transactionRepo.UpdateStatus(transactionID, "paid")
 	if err != nil {
 		u.transactionRepo.RollbackTx(dbTx)
 		return err
@@ -290,7 +294,7 @@ func (u *TransactionUsecase) OnPaymentPaid(transactionID uint64) error {
 	return u.transactionRepo.CommitTx(dbTx)
 }
 
-// OnPaymentFailed - Payment callback when payment fails
+// OnPaymentFailed - Used by payment intent system
 func (u *TransactionUsecase) OnPaymentFailed(transactionID uint64) error {
 	transaction, err := u.transactionRepo.GetByID(transactionID)
 	if err != nil {
@@ -298,12 +302,12 @@ func (u *TransactionUsecase) OnPaymentFailed(transactionID uint64) error {
 	}
 
 	// Idempotent check
-	if transaction.PaymentStatus != "pending" {
+	if transaction.Status != "pending" {
 		return nil
 	}
 
 	// Update status
-	err = u.transactionRepo.UpdatePaymentStatus(transactionID, "failed")
+	err = u.transactionRepo.UpdateStatus(transactionID, "failed")
 	if err != nil {
 		return err
 	}
@@ -318,6 +322,11 @@ func (u *TransactionUsecase) ProcessOrder(sellerID, transactionID uint64) error 
 		return errors.New("transaction not found")
 	}
 
+	// Check if transaction is cancelled
+	if transaction.Status == "cancelled" || transaction.OrderStatus == "cancelled" {
+		return errors.New("transaction cancelled")
+	}
+
 	// Validate seller owns store in transaction
 	for _, item := range transaction.TransactionItems {
 		store, err := u.storeRepo.GetByID(item.StoreID)
@@ -327,7 +336,7 @@ func (u *TransactionUsecase) ProcessOrder(sellerID, transactionID uint64) error 
 	}
 
 	// Validate payment status
-	if transaction.PaymentStatus != "paid" {
+	if transaction.Status != "paid" {
 		return errors.New("payment not completed")
 	}
 
@@ -395,25 +404,25 @@ func (u *TransactionUsecase) CancelTransaction(userID, transactionID uint64) err
 	}
 
 	// Check if paid - should use refund instead
-	if transaction.PaymentStatus == "paid" {
+	if transaction.Status == "paid" {
 		return errors.New("use refund for paid transactions")
 	}
 
-	// Can only cancel created orders
+	// Can only cancel created orders (not processed, shipped, or delivered)
 	if transaction.OrderStatus != "created" {
-		return errors.New("cannot cancel")
+		return errors.New("cannot cancel processed order")
 	}
 
-	// Update transaction status
-	err = u.transactionRepo.UpdateOrderStatus(transactionID, "cancelled")
+	// Update both status and order status to cancelled
+	err = u.transactionRepo.UpdateStatus(transactionID, "cancelled")
 	if err != nil {
 		return err
 	}
 
-	// Expire any active payment intents for this transaction
-	// This prevents payment success after cancellation
-	// Note: This would require payment intent usecase injection
-	// For now, we'll handle this at the application layer
+	err = u.transactionRepo.UpdateOrderStatus(transactionID, "cancelled")
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -426,7 +435,7 @@ func (u *TransactionUsecase) RefundTransaction(transactionID uint64) error {
 	}
 
 	// Can only refund paid transactions
-	if transaction.PaymentStatus != "paid" {
+	if transaction.Status != "paid" {
 		return errors.New("NOT_REFUNDABLE")
 	}
 
@@ -444,7 +453,7 @@ func (u *TransactionUsecase) RefundTransaction(transactionID uint64) error {
 	}()
 
 	// Update payment status to refunded
-	err = u.transactionRepo.UpdatePaymentStatus(transactionID, "refunded")
+	err = u.transactionRepo.UpdateStatus(transactionID, "refunded")
 	if err != nil {
 		u.transactionRepo.RollbackTx(dbTx)
 		return err
