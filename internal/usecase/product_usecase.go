@@ -35,10 +35,16 @@ func (u *ProductUsecase) CreateProduct(userID uint64, req *domain.CreateProductR
 		return nil, errors.New("store not found")
 	}
 
-	// Validate category exists
-	_, err = u.categoryRepo.GetByID(req.IDCategory)
+	// Validate category exists and is active
+	category, err := u.categoryRepo.GetByID(req.IDCategory)
 	if err != nil {
 		return nil, errors.New("category not found")
+	}
+	if category.Status != "active" {
+		return nil, errors.New("invalid category")
+	}
+	if !category.IsLeaf {
+		return nil, errors.New("product must use leaf category")
 	}
 
 	// Generate unique slug from product name
@@ -66,6 +72,11 @@ func (u *ProductUsecase) CreateProduct(userID uint64, req *domain.CreateProductR
 	if err != nil {
 		return nil, err
 	}
+
+	// Update category's has_active_product flag
+	go func() {
+		u.categoryRepo.UpdateHasActiveProduct(req.IDCategory)
+	}()
 
 	// Get the created product with all relations
 	createdProduct, err := u.productRepo.GetByID(product.ID)
@@ -164,14 +175,22 @@ func (u *ProductUsecase) UpdateProduct(userID, productID uint64, req *domain.Upd
 		return nil, err
 	}
 
-	// Validate category exists
-	_, err = u.categoryRepo.GetByID(req.IDCategory)
+	// Validate category exists and is active
+	category, err := u.categoryRepo.GetByID(req.IDCategory)
 	if err != nil {
 		return nil, errors.New("category not found")
+	}
+	if category.Status != "active" {
+		return nil, errors.New("invalid category")
+	}
+	if !category.IsLeaf {
+		return nil, errors.New("product must use leaf category")
 	}
 
 	// Check if name changed to update slug
 	nameChanged := product.NamaProduk != req.NamaProduk
+	categoryChanged := product.IDCategory != req.IDCategory
+	oldCategoryID := product.IDCategory
 
 	// Update fields
 	product.NamaProduk = req.NamaProduk
@@ -200,6 +219,14 @@ func (u *ProductUsecase) UpdateProduct(userID, productID uint64, req *domain.Upd
 		return nil, err
 	}
 
+	// Update category flags if category changed
+	if categoryChanged {
+		go func() {
+			u.categoryRepo.UpdateHasActiveProduct(oldCategoryID)
+			u.categoryRepo.UpdateHasActiveProduct(req.IDCategory)
+		}()
+	}
+
 	// Return updated product with all relations
 	return u.productRepo.GetByID(productID)
 }
@@ -217,7 +244,24 @@ func (u *ProductUsecase) DeleteProduct(userID, productID uint64) error {
 		return err
 	}
 
-	return u.productRepo.Delete(productID)
+	// Get product to know its category before deletion
+	product, err := u.productRepo.GetByID(productID)
+	if err != nil {
+		return err
+	}
+	categoryID := product.IDCategory
+
+	err = u.productRepo.Delete(productID)
+	if err != nil {
+		return err
+	}
+
+	// Update category's has_active_product flag
+	go func() {
+		u.categoryRepo.UpdateHasActiveProduct(categoryID)
+	}()
+
+	return nil
 }
 
 func (u *ProductUsecase) AddProductPhoto(userID, productID uint64, photoURL string, isPrimary bool) (*domain.PhotoProduk, error) {

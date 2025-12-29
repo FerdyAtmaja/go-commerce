@@ -22,7 +22,7 @@ func NewRouter(app *fiber.App, jwtManager *jwt.JWTManager) *Router {
 
 func (r *Router) SetupAuthRoutes(authUsecase *usecase.AuthUsecase) {
 	authHandler := NewAuthHandler(authUsecase)
-
+	
 	api := r.app.Group("/api/v1")
 	auth := api.Group("/auth")
 
@@ -36,100 +36,86 @@ func (r *Router) SetupAuthRoutes(authUsecase *usecase.AuthUsecase) {
 
 func (r *Router) SetupUserRoutes(userUsecase *usecase.UserUsecase) {
 	userHandler := NewUserHandler(userUsecase)
-
+	
 	api := r.app.Group("/api/v1")
 	users := api.Group("/users")
 
 	// Protected routes
-	users.Get("/profile", middleware.JWTMiddleware(r.jwtManager), userHandler.GetProfile)
-	users.Put("/profile", middleware.JWTMiddleware(r.jwtManager), userHandler.UpdateProfile)
-	users.Put("/change-password", middleware.JWTMiddleware(r.jwtManager), userHandler.ChangePassword)
+	users.Get("/my", middleware.JWTMiddleware(r.jwtManager), userHandler.GetProfile)
+	users.Put("/my", middleware.JWTMiddleware(r.jwtManager), userHandler.UpdateProfile)
+	users.Put("/my/password", middleware.JWTMiddleware(r.jwtManager), userHandler.ChangePassword)
 }
 
 func (r *Router) SetupStoreRoutes(storeUsecase *usecase.StoreUsecase) {
 	storeHandler := NewStoreHandler(storeUsecase)
-
+	
 	api := r.app.Group("/api/v1")
 	stores := api.Group("/stores")
 
 	// Public routes
 	stores.Get("/", storeHandler.GetAllStores)
+	stores.Get("/:id", storeHandler.GetStoreByID)
 
 	// Protected routes
-	stores.Post("/", middleware.JWTMiddleware(r.jwtManager), storeHandler.CreateStore)
 	stores.Get("/my", middleware.JWTMiddleware(r.jwtManager), storeHandler.GetMyStore)
 	stores.Put("/my", middleware.JWTMiddleware(r.jwtManager), storeHandler.UpdateMyStore)
-
-	// Dynamic routes (must be last)
-	stores.Get("/:id", storeHandler.GetStoreByID)
 }
 
 func (r *Router) SetupCategoryRoutes(categoryUsecase *usecase.CategoryUsecase) {
 	categoryHandler := NewCategoryHandler(categoryUsecase)
-
+	
 	api := r.app.Group("/api/v1")
 	categories := api.Group("/categories")
 
 	// Public routes
 	categories.Get("/", categoryHandler.GetAllCategories)
-	categories.Get("/root", categoryHandler.GetRootCategories)
-	categories.Get("/slug/:slug", categoryHandler.GetCategoryBySlug)
 	categories.Get("/:id", categoryHandler.GetCategoryByID)
-	categories.Get("/:id/children", categoryHandler.GetChildrenByParentID)
 
 	// Admin only routes
 	adminMiddleware := middleware.JWTMiddleware(r.jwtManager)
 	requireAdmin := middleware.RequireAdmin()
 	categories.Post("/", adminMiddleware, requireAdmin, categoryHandler.CreateCategory)
 	categories.Put("/:id", adminMiddleware, requireAdmin, categoryHandler.UpdateCategory)
+	categories.Put("/:id/activate", adminMiddleware, requireAdmin, categoryHandler.ActivateCategory)
+	categories.Put("/:id/deactivate", adminMiddleware, requireAdmin, categoryHandler.DeactivateCategory)
 	categories.Delete("/:id", adminMiddleware, requireAdmin, categoryHandler.DeleteCategory)
 }
 
 func (r *Router) SetupAddressRoutes(addressUsecase *usecase.AddressUsecase) {
 	addressHandler := NewAddressHandler(addressUsecase)
-
+	
 	api := r.app.Group("/api/v1")
 	addresses := api.Group("/addresses")
 
 	// Protected routes (user can only manage their own addresses)
 	jwtMiddleware := middleware.JWTMiddleware(r.jwtManager)
 	addresses.Get("/", jwtMiddleware, addressHandler.GetMyAddresses)
-	addresses.Get("/default", jwtMiddleware, addressHandler.GetDefaultAddress)
 	addresses.Post("/", jwtMiddleware, addressHandler.CreateAddress)
 	addresses.Get("/:id", jwtMiddleware, addressHandler.GetAddressByID)
 	addresses.Put("/:id", jwtMiddleware, addressHandler.UpdateAddress)
-	addresses.Put("/:id/default", jwtMiddleware, addressHandler.SetDefaultAddress)
 	addresses.Delete("/:id", jwtMiddleware, addressHandler.DeleteAddress)
 
-	// Region routes
-	regions := api.Group("/regions")
-	provinces := regions.Group("/provinces")
+	// Utility routes for Indonesia regions
+	provinces := api.Group("/provinces")
 	provinces.Get("/", addressHandler.GetProvinces)
 	provinces.Get("/:provinceId/cities", addressHandler.GetCitiesByProvince)
 }
 
 func (r *Router) SetupProductRoutes(productUsecase *usecase.ProductUsecase) {
 	productHandler := NewProductHandler(productUsecase)
-
+	
 	api := r.app.Group("/api/v1")
 	products := api.Group("/products")
 
 	// Public routes
 	products.Get("/", productHandler.GetAllProducts)
-	products.Get("/search/slug", productHandler.SearchProductsBySlug)
 	products.Get("/slug/:slug", productHandler.GetProductBySlug)
+	products.Get("/:id", productHandler.GetProductByID)
 
 	// Protected routes (store owner only)
 	jwtMiddleware := middleware.JWTMiddleware(r.jwtManager)
 	products.Get("/my", jwtMiddleware, productHandler.GetMyProducts)
 	products.Post("/", jwtMiddleware, productHandler.CreateProduct)
-
-	// Admin only routes
-	adminMiddleware := middleware.RequireAdmin()
-	products.Get("/status", jwtMiddleware, adminMiddleware, productHandler.GetProductsByStatus)
-
-	// Dynamic routes (must be last)
-	products.Get("/:id", productHandler.GetProductByID)
 	products.Put("/:id", jwtMiddleware, productHandler.UpdateProduct)
 	products.Delete("/:id", jwtMiddleware, productHandler.DeleteProduct)
 
@@ -141,7 +127,7 @@ func (r *Router) SetupProductRoutes(productUsecase *usecase.ProductUsecase) {
 
 func (r *Router) SetupTransactionRoutes(transactionUsecase *usecase.TransactionUsecase) {
 	transactionHandler := NewTransactionHandler(transactionUsecase)
-
+	
 	api := r.app.Group("/api/v1")
 	transactions := api.Group("/transactions")
 

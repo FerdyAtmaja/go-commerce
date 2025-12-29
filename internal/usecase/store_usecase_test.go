@@ -7,6 +7,7 @@ import (
 	"go-commerce/internal/usecase/mocks"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"gorm.io/gorm"
 )
 
@@ -73,9 +74,11 @@ func TestStoreUsecase_UpdateMyStore_Success(t *testing.T) {
 		Description: "Old Description",
 	}
 
+	newName := "New Store Name"
+	newDescription := "New Description"
 	req := &domain.UpdateStoreRequest{
-		Name:        "New Store Name",
-		Description: "New Description",
+		Name:        &newName,
+		Description: &newDescription,
 	}
 
 	// Mock expectations
@@ -88,8 +91,8 @@ func TestStoreUsecase_UpdateMyStore_Success(t *testing.T) {
 	// Assert
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
-	assert.Equal(t, req.Name, result.Name)
-	assert.Equal(t, req.Description, result.Description)
+	assert.Equal(t, *req.Name, result.Name)
+	assert.Equal(t, *req.Description, result.Description)
 	assert.Equal(t, userID, result.UserID)
 
 	mockStoreRepo.AssertExpectations(t)
@@ -196,24 +199,31 @@ func TestStoreUsecase_CreateStore_Success(t *testing.T) {
 	storeUsecase := NewStoreUsecase(mockStoreRepo)
 
 	userID := uint64(1)
-	storeName := "New Store"
+	req := &domain.CreateStoreRequest{
+		Name:        "New Store",
+		Description: "Welcome to New Store",
+	}
 
 	// Mock expectations
-	mockStoreRepo.On("Create", &domain.Store{
+	mockStoreRepo.On("GetByUserID", userID).Return(nil, gorm.ErrRecordNotFound)
+	mockStoreRepo.On("Create", mock.MatchedBy(func(store *domain.Store) bool {
+		return store.UserID == userID && store.Name == req.Name
+	})).Return(nil)
+	mockStoreRepo.On("GetByID", mock.AnythingOfType("uint64")).Return(&domain.Store{
 		UserID:      userID,
-		Name:        storeName,
-		Description: "Welcome to " + storeName,
-	}).Return(nil)
+		Name:        req.Name,
+		Description: req.Description,
+	}, nil)
 
 	// Execute
-	result, err := storeUsecase.CreateStore(userID, storeName)
+	result, err := storeUsecase.CreateStore(userID, req)
 
 	// Assert
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, userID, result.UserID)
-	assert.Equal(t, storeName, result.Name)
-	assert.Equal(t, "Welcome to "+storeName, result.Description)
+	assert.Equal(t, req.Name, result.Name)
+	assert.Equal(t, req.Description, result.Description)
 
 	mockStoreRepo.AssertExpectations(t)
 }

@@ -667,7 +667,7 @@ const docTemplate = `{
                 "summary": "Create a new category",
                 "parameters": [
                     {
-                        "description": "Category creation request. For root category: {\\",
+                        "description": "Category creation request",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -709,116 +709,6 @@ const docTemplate = `{
                     },
                     "403": {
                         "description": "Forbidden - admin only",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/categories/root": {
-            "get": {
-                "description": "Get all root categories (categories without parent) with pagination (public endpoint)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Categories"
-                ],
-                "summary": "Get root categories",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "default": 1,
-                        "description": "Page number",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 10,
-                        "description": "Items per page",
-                        "name": "limit",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Root categories retrieved successfully",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/response.PaginatedResponse"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/domain.Category"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/categories/slug/{slug}": {
-            "get": {
-                "description": "Get a single category by its slug (public endpoint)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Categories"
-                ],
-                "summary": "Get category by slug",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Category Slug",
-                        "name": "slug",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Category retrieved successfully",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/response.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/domain.Category"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "404": {
-                        "description": "Category not found",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -961,7 +851,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Delete an existing category (admin only)",
+                "description": "Physical delete of category (admin only). Only allowed if never used by any product in history",
                 "consumes": [
                     "application/json"
                 ],
@@ -1001,7 +891,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "Forbidden - admin only",
+                        "description": "Forbidden - admin only or category has been used",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -1009,9 +899,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/categories/{id}/children": {
-            "get": {
-                "description": "Get all children categories of a parent category (public endpoint)",
+        "/categories/{id}/activate": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Activate a category following business rules: cannot activate if parent is inactive (admin only)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1021,11 +916,11 @@ const docTemplate = `{
                 "tags": [
                     "Categories"
                 ],
-                "summary": "Get children categories",
+                "summary": "Activate a category",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Parent Category ID",
+                        "description": "Category ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1033,34 +928,92 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Children categories retrieved successfully",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/response.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/domain.Category"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid parent category ID",
+                        "description": "Category activated successfully",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
                     },
-                    "404": {
-                        "description": "Parent category not found",
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - admin only",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict - parent category is inactive",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/categories/{id}/deactivate": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Deactivate a category following business rules: cannot deactivate if has active children or used by active products (admin only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Deactivate a category",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Category ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Category deactivated successfully",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - admin only",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict - category has active children or used by active products",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }

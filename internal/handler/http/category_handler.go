@@ -30,7 +30,7 @@ func NewCategoryHandler(categoryUsecase *usecase.CategoryUsecase) *CategoryHandl
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param request body domain.CreateCategoryRequest true "Category creation request. For root category: {\"name\": \"Electronics\", \"parent_id\": 0} or omit parent_id. For subcategory: {\"name\": \"Smartphones\", \"parent_id\": 1}"
+// @Param request body domain.CreateCategoryRequest true "Category creation request"
 // @Success 201 {object} response.Response{data=domain.Category} "Category created successfully"
 // @Failure 400 {object} response.Response "Bad request"
 // @Failure 401 {object} response.Response "Unauthorized"
@@ -42,7 +42,6 @@ func (h *CategoryHandler) CreateCategory(c *fiber.Ctx) error {
 		return response.BadRequest(c, "Invalid request body")
 	}
 
-	// Handle special case: if parent_id is 0, treat as null (root category)
 	if req.ParentID != nil && *req.ParentID == 0 {
 		req.ParentID = nil
 	}
@@ -146,9 +145,65 @@ func (h *CategoryHandler) UpdateCategory(c *fiber.Ctx) error {
 	return response.Success(c, "Category updated successfully", category)
 }
 
+// DeactivateCategory godoc
+// @Summary Deactivate a category
+// @Description Deactivate a category following business rules: cannot deactivate if has active children or used by active products (admin only)
+// @Tags Categories
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Category ID"
+// @Success 200 {object} response.Response "Category deactivated successfully"
+// @Failure 400 {object} response.Response "Bad request"
+// @Failure 401 {object} response.Response "Unauthorized"
+// @Failure 403 {object} response.Response "Forbidden - admin only"
+// @Failure 409 {object} response.Response "Conflict - category has active children or used by active products"
+// @Router /categories/{id}/deactivate [put]
+func (h *CategoryHandler) DeactivateCategory(c *fiber.Ctx) error {
+	idParam := c.Params("id")
+	id, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		return response.BadRequest(c, "Invalid category ID")
+	}
+
+	if err := h.categoryUsecase.DeactivateCategory(id); err != nil {
+		return response.Conflict(c, err.Error())
+	}
+
+	return response.Success(c, "Category deactivated successfully", nil)
+}
+
+// ActivateCategory godoc
+// @Summary Activate a category
+// @Description Activate a category following business rules: cannot activate if parent is inactive (admin only)
+// @Tags Categories
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Category ID"
+// @Success 200 {object} response.Response "Category activated successfully"
+// @Failure 400 {object} response.Response "Bad request"
+// @Failure 401 {object} response.Response "Unauthorized"
+// @Failure 403 {object} response.Response "Forbidden - admin only"
+// @Failure 409 {object} response.Response "Conflict - parent category is inactive"
+// @Router /categories/{id}/activate [put]
+func (h *CategoryHandler) ActivateCategory(c *fiber.Ctx) error {
+	idParam := c.Params("id")
+	id, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		return response.BadRequest(c, "Invalid category ID")
+	}
+
+	if err := h.categoryUsecase.ActivateCategory(id); err != nil {
+		return response.Conflict(c, err.Error())
+	}
+
+	return response.Success(c, "Category activated successfully", nil)
+}
+
 // DeleteCategory godoc
 // @Summary Delete a category
-// @Description Delete an existing category (admin only)
+// @Description Physical delete of category (admin only). Only allowed if never used by any product in history
 // @Tags Categories
 // @Accept json
 // @Produce json
@@ -157,7 +212,7 @@ func (h *CategoryHandler) UpdateCategory(c *fiber.Ctx) error {
 // @Success 200 {object} response.Response "Category deleted successfully"
 // @Failure 400 {object} response.Response "Bad request"
 // @Failure 401 {object} response.Response "Unauthorized"
-// @Failure 403 {object} response.Response "Forbidden - admin only"
+// @Failure 403 {object} response.Response "Forbidden - admin only or category has been used"
 // @Router /categories/{id} [delete]
 func (h *CategoryHandler) DeleteCategory(c *fiber.Ctx) error {
 	idParam := c.Params("id")
@@ -167,81 +222,8 @@ func (h *CategoryHandler) DeleteCategory(c *fiber.Ctx) error {
 	}
 
 	if err := h.categoryUsecase.DeleteCategory(id); err != nil {
-		return response.BadRequest(c, err.Error())
+		return response.Forbidden(c, err.Error())
 	}
 
 	return response.Success(c, "Category deleted successfully", nil)
-}
-
-// GetCategoryBySlug godoc
-// @Summary Get category by slug
-// @Description Get a single category by its slug (public endpoint)
-// @Tags Categories
-// @Accept json
-// @Produce json
-// @Param slug path string true "Category Slug"
-// @Success 200 {object} response.Response{data=domain.Category} "Category retrieved successfully"
-// @Failure 404 {object} response.Response "Category not found"
-// @Router /categories/slug/{slug} [get]
-func (h *CategoryHandler) GetCategoryBySlug(c *fiber.Ctx) error {
-	slug := c.Params("slug")
-	if slug == "" {
-		return response.BadRequest(c, "Category slug is required")
-	}
-
-	category, err := h.categoryUsecase.GetCategoryBySlug(slug)
-	if err != nil {
-		return response.NotFound(c, err.Error())
-	}
-
-	return response.Success(c, "Category retrieved successfully", category)
-}
-
-// GetRootCategories godoc
-// @Summary Get root categories
-// @Description Get all root categories (categories without parent) with pagination (public endpoint)
-// @Tags Categories
-// @Accept json
-// @Produce json
-// @Param page query int false "Page number" default(1)
-// @Param limit query int false "Items per page" default(10)
-// @Success 200 {object} response.PaginatedResponse{data=[]domain.Category} "Root categories retrieved successfully"
-// @Failure 500 {object} response.Response "Internal server error"
-// @Router /categories/root [get]
-func (h *CategoryHandler) GetRootCategories(c *fiber.Ctx) error {
-	page, _ := strconv.Atoi(c.Query("page", "1"))
-	limit, _ := strconv.Atoi(c.Query("limit", "10"))
-
-	categories, meta, err := h.categoryUsecase.GetRootCategories(page, limit)
-	if err != nil {
-		return response.InternalServerError(c, err.Error())
-	}
-
-	return response.Paginated(c, "Root categories retrieved successfully", categories, meta)
-}
-
-// GetChildrenByParentID godoc
-// @Summary Get children categories
-// @Description Get all children categories of a parent category (public endpoint)
-// @Tags Categories
-// @Accept json
-// @Produce json
-// @Param id path int true "Parent Category ID"
-// @Success 200 {object} response.Response{data=[]domain.Category} "Children categories retrieved successfully"
-// @Failure 400 {object} response.Response "Invalid parent category ID"
-// @Failure 404 {object} response.Response "Parent category not found"
-// @Router /categories/{id}/children [get]
-func (h *CategoryHandler) GetChildrenByParentID(c *fiber.Ctx) error {
-	idParam := c.Params("id")
-	id, err := strconv.ParseUint(idParam, 10, 64)
-	if err != nil {
-		return response.BadRequest(c, "Invalid parent category ID")
-	}
-
-	children, err := h.categoryUsecase.GetChildrenByParentID(id)
-	if err != nil {
-		return response.NotFound(c, err.Error())
-	}
-
-	return response.Success(c, "Children categories retrieved successfully", children)
 }

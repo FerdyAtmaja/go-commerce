@@ -22,6 +22,7 @@ func TestCategoryUsecase_CreateCategory_Success(t *testing.T) {
 
 	// Mock expectations
 	mockCategoryRepo.On("GetByName", req.Name).Return(nil, gorm.ErrRecordNotFound) // Name not exists
+	mockCategoryRepo.On("GetBySlug", "electronics").Return(nil, gorm.ErrRecordNotFound) // Slug not exists
 	mockCategoryRepo.On("Create", mock.MatchedBy(func(category *domain.Category) bool {
 		return category.Name == req.Name && category.Slug == "electronics"
 	})).Return(nil)
@@ -134,6 +135,7 @@ func TestCategoryUsecase_UpdateCategory_Success(t *testing.T) {
 	// Mock expectations
 	mockCategoryRepo.On("GetByID", categoryID).Return(existingCategory, nil)
 	mockCategoryRepo.On("GetByName", req.Name).Return(nil, gorm.ErrRecordNotFound) // New name not exists
+	mockCategoryRepo.On("GetBySlug", "updated-electronics").Return(nil, gorm.ErrRecordNotFound) // Slug not exists
 	mockCategoryRepo.On("Update", mock.MatchedBy(func(category *domain.Category) bool {
 		return category.Name == req.Name && category.Slug == "updated-electronics"
 	})).Return(nil)
@@ -200,6 +202,8 @@ func TestCategoryUsecase_DeleteCategory_Success(t *testing.T) {
 
 	// Mock expectations
 	mockCategoryRepo.On("GetByID", categoryID).Return(category, nil)
+	mockCategoryRepo.On("GetChildrenByParentID", categoryID).Return([]*domain.Category{}, nil)
+	mockCategoryRepo.On("HasHistoricalProducts", categoryID).Return(false, nil)
 	mockCategoryRepo.On("Delete", categoryID).Return(nil)
 
 	// Execute
@@ -330,5 +334,136 @@ func TestCategoryUsecase_GetChildrenByParentID_Success(t *testing.T) {
 	assert.Len(t, result, 2)
 	assert.Equal(t, parentID, *result[0].ParentID)
 
+	mockCategoryRepo.AssertExpectations(t)
+}
+// Test business rules for deactivating categories
+func TestCategoryUsecase_DeactivateCategory_Success(t *testing.T) {
+	// Setup
+	mockCategoryRepo := new(mocks.MockCategoryRepository)
+	categoryUsecase := NewCategoryUsecase(mockCategoryRepo)
+
+	categoryID := uint64(1)
+	category := &domain.Category{
+		ID:     categoryID,
+		Name:   "Electronics",
+		Status: "active",
+	}
+
+	// Mock expectations
+	mockCategoryRepo.On("GetByID", categoryID).Return(category, nil)
+	mockCategoryRepo.On("HasActiveChildren", categoryID).Return(false, nil)
+	mockCategoryRepo.On("HasActiveProducts", categoryID).Return(false, nil)
+	mockCategoryRepo.On("UpdateStatus", categoryID, "inactive").Return(nil)
+
+	// Execute
+	err := categoryUsecase.DeactivateCategory(categoryID)
+
+	// Assert
+	assert.NoError(t, err)
+	mockCategoryRepo.AssertExpectations(t)
+}
+
+func TestCategoryUsecase_DeactivateCategory_HasActiveChildren(t *testing.T) {
+	// Setup
+	mockCategoryRepo := new(mocks.MockCategoryRepository)
+	categoryUsecase := NewCategoryUsecase(mockCategoryRepo)
+
+	categoryID := uint64(1)
+	category := &domain.Category{
+		ID:     categoryID,
+		Name:   "Electronics",
+		Status: "active",
+	}
+
+	// Mock expectations
+	mockCategoryRepo.On("GetByID", categoryID).Return(category, nil)
+	mockCategoryRepo.On("HasActiveChildren", categoryID).Return(true, nil)
+
+	// Execute
+	err := categoryUsecase.DeactivateCategory(categoryID)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "category has active child categories")
+	mockCategoryRepo.AssertExpectations(t)
+}
+
+func TestCategoryUsecase_DeactivateCategory_HasActiveProducts(t *testing.T) {
+	// Setup
+	mockCategoryRepo := new(mocks.MockCategoryRepository)
+	categoryUsecase := NewCategoryUsecase(mockCategoryRepo)
+
+	categoryID := uint64(1)
+	category := &domain.Category{
+		ID:     categoryID,
+		Name:   "Electronics",
+		Status: "active",
+	}
+
+	// Mock expectations
+	mockCategoryRepo.On("GetByID", categoryID).Return(category, nil)
+	mockCategoryRepo.On("HasActiveChildren", categoryID).Return(false, nil)
+	mockCategoryRepo.On("HasActiveProducts", categoryID).Return(true, nil)
+
+	// Execute
+	err := categoryUsecase.DeactivateCategory(categoryID)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "category is used by active products")
+	mockCategoryRepo.AssertExpectations(t)
+}
+
+func TestCategoryUsecase_ActivateCategory_Success(t *testing.T) {
+	// Setup
+	mockCategoryRepo := new(mocks.MockCategoryRepository)
+	categoryUsecase := NewCategoryUsecase(mockCategoryRepo)
+
+	categoryID := uint64(1)
+	parentID := uint64(2)
+	category := &domain.Category{
+		ID:       categoryID,
+		Name:     "Smartphones",
+		Status:   "inactive",
+		ParentID: &parentID,
+	}
+
+	// Mock expectations
+	mockCategoryRepo.On("GetByID", categoryID).Return(category, nil)
+	mockCategoryRepo.On("GetParentStatus", categoryID).Return("active", nil)
+	mockCategoryRepo.On("UpdateStatus", categoryID, "active").Return(nil)
+
+	// Execute
+	err := categoryUsecase.ActivateCategory(categoryID)
+
+	// Assert
+	assert.NoError(t, err)
+	mockCategoryRepo.AssertExpectations(t)
+}
+
+func TestCategoryUsecase_ActivateCategory_ParentInactive(t *testing.T) {
+	// Setup
+	mockCategoryRepo := new(mocks.MockCategoryRepository)
+	categoryUsecase := NewCategoryUsecase(mockCategoryRepo)
+
+	categoryID := uint64(1)
+	parentID := uint64(2)
+	category := &domain.Category{
+		ID:       categoryID,
+		Name:     "Smartphones",
+		Status:   "inactive",
+		ParentID: &parentID,
+	}
+
+	// Mock expectations
+	mockCategoryRepo.On("GetByID", categoryID).Return(category, nil)
+	mockCategoryRepo.On("GetParentStatus", categoryID).Return("inactive", nil)
+
+	// Execute
+	err := categoryUsecase.ActivateCategory(categoryID)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "parent category inactive")
 	mockCategoryRepo.AssertExpectations(t)
 }

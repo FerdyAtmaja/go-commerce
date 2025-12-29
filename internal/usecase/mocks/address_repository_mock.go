@@ -45,3 +45,16 @@ func (m *MockAddressRepository) CheckOwnership(addressID, userID uint64) bool {
 	args := m.Called(addressID, userID)
 	return args.Bool(0)
 }
+
+func (m *MockAddressRepository) GetDefaultByUserID(userID uint64) (*domain.Address, error) {
+	args := m.Called(userID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*domain.Address), args.Error(1)
+}
+
+func (m *MockAddressRepository) SetDefault(addressID, userID uint64) error {
+	args := m.Called(addressID, userID)
+	return args.Error(0)
+}

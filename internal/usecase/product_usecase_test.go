@@ -28,8 +28,10 @@ func TestProductUsecase_CreateProduct_Success(t *testing.T) {
 		Name:   "Test Store",
 	}
 	category := &domain.Category{
-		ID:   1,
-		Name: "Electronics",
+		ID:     1,
+		Name:   "Electronics",
+		Status: "active",
+		IsLeaf: true,
 	}
 	req := &domain.CreateProductRequest{
 		NamaProduk:    "iPhone 15",
@@ -44,8 +46,16 @@ func TestProductUsecase_CreateProduct_Success(t *testing.T) {
 	// Setup expectations
 	storeRepo.On("GetByUserID", userID).Return(store, nil)
 	categoryRepo.On("GetByID", req.IDCategory).Return(category, nil)
+	categoryRepo.On("UpdateHasActiveProduct", req.IDCategory).Return(nil).Maybe()
 	productRepo.On("GetBySlug", "iphone-15").Return(nil, errors.New("not found"))
 	productRepo.On("Create", mock.AnythingOfType("*domain.Product")).Return(nil)
+	productRepo.On("GetByID", mock.AnythingOfType("uint64")).Return(&domain.Product{
+		NamaProduk: req.NamaProduk,
+		Slug:       "iphone-15",
+		IDToko:     store.ID,
+		IDCategory: req.IDCategory,
+		Status:     "active",
+	}, nil)
 
 	// Execute
 	product, err := usecase.CreateProduct(userID, req)
@@ -179,14 +189,6 @@ func TestProductUsecase_UpdateProduct_Success(t *testing.T) {
 	userID := uint64(1)
 	productID := uint64(1)
 	store := &domain.Store{ID: 1, UserID: userID}
-	category := &domain.Category{ID: 1, Name: "Electronics"}
-	existingProduct := &domain.Product{
-		ID:         productID,
-		NamaProduk: "Old Product",
-		Slug:       "old-product",
-		IDToko:     store.ID,
-		IDCategory: 1,
-	}
 	req := &domain.UpdateProductRequest{
 		NamaProduk:    "Updated Product",
 		HargaReseller: 20000000,
@@ -199,10 +201,26 @@ func TestProductUsecase_UpdateProduct_Success(t *testing.T) {
 	// Setup expectations
 	storeRepo.On("GetByUserID", userID).Return(store, nil)
 	productRepo.On("CheckOwnership", productID, store.ID).Return(nil)
-	productRepo.On("GetByID", productID).Return(existingProduct, nil)
-	categoryRepo.On("GetByID", req.IDCategory).Return(category, nil)
+	productRepo.On("GetByID", productID).Return(&domain.Product{
+		ID:         productID,
+		NamaProduk: "Old Product",
+		Slug:       "old-product",
+		IDToko:     store.ID,
+		IDCategory: 1,
+	}, nil)
+	categoryRepo.On("GetByID", req.IDCategory).Return(&domain.Category{
+		ID:     req.IDCategory,
+		Name:   "Electronics",
+		Status: "active",
+		IsLeaf: true,
+	}, nil)
 	productRepo.On("GetBySlug", "updated-product").Return(nil, errors.New("not found"))
 	productRepo.On("Update", mock.AnythingOfType("*domain.Product")).Return(nil)
+	productRepo.On("GetByID", productID).Return(&domain.Product{
+		NamaProduk: req.NamaProduk,
+		Slug:       "updated-product",
+		IDCategory: req.IDCategory,
+	}, nil)
 
 	// Execute
 	product, err := usecase.UpdateProduct(userID, productID, req)
@@ -270,6 +288,11 @@ func TestProductUsecase_DeleteProduct_Success(t *testing.T) {
 	// Setup expectations
 	storeRepo.On("GetByUserID", userID).Return(store, nil)
 	productRepo.On("CheckOwnership", productID, store.ID).Return(nil)
+	productRepo.On("GetByID", productID).Return(&domain.Product{
+		ID:         productID,
+		IDCategory: 1,
+	}, nil)
+	categoryRepo.On("UpdateHasActiveProduct", uint64(1)).Return(nil).Maybe()
 	productRepo.On("Delete", productID).Return(nil)
 
 	// Execute
@@ -318,7 +341,7 @@ func TestProductUsecase_AddProductPhoto_Success(t *testing.T) {
 	assert.Equal(t, productID, photo.IDProduk)
 	assert.Equal(t, photoURL, photo.URL)
 	assert.Equal(t, isPrimary, photo.IsPrimary)
-	assert.Equal(t, 1, photo.Position)
+	assert.Equal(t, int64(1), photo.Position)
 
 	// Verify expectations
 	storeRepo.AssertExpectations(t)

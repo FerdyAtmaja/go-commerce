@@ -66,6 +66,13 @@ func NotFound(c *fiber.Ctx, message string) error {
 	})
 }
 
+func Conflict(c *fiber.Ctx, message string) error {
+	return c.Status(fiber.StatusConflict).JSON(Response{
+		Status:  "error",
+		Message: message,
+	})
+}
+
 func InternalServerError(c *fiber.Ctx, message string) error {
 	return c.Status(fiber.StatusInternalServerError).JSON(Response{
 		Status:  "error",

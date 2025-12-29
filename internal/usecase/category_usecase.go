@@ -27,13 +27,17 @@ func (u *CategoryUsecase) CreateCategory(req *domain.CreateCategoryRequest) (*do
 		return nil, errors.New("category name already exists")
 	}
 
-	// Validate parent category exists if provided
+	// Validate parent category exists and is active if provided
 	if req.ParentID != nil {
-		if _, err := u.categoryRepo.GetByID(*req.ParentID); err != nil {
+		parent, err := u.categoryRepo.GetByID(*req.ParentID)
+		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return nil, errors.New("parent category not found")
 			}
 			return nil, errors.New("failed to validate parent category")
+		}
+		if parent.Status != "active" {
+			return nil, errors.New("parent category must be active")
 		}
 	}
 
@@ -48,10 +52,18 @@ func (u *CategoryUsecase) CreateCategory(req *domain.CreateCategoryRequest) (*do
 		Name:     req.Name,
 		ParentID: req.ParentID,
 		Slug:     slug,
+		Status:   "active",
 	}
 
 	if err := u.categoryRepo.Create(category); err != nil {
 		return nil, errors.New("failed to create category")
+	}
+
+	// Update parent's child flags if this is a subcategory
+	if req.ParentID != nil {
+		go func() {
+			u.categoryRepo.UpdateChildFlags(*req.ParentID)
+		}()
 	}
 
 	return category, nil
@@ -71,7 +83,7 @@ func (u *CategoryUsecase) GetCategoryByID(id uint64) (*domain.Category, error) {
 
 func (u *CategoryUsecase) UpdateCategory(id uint64, req *domain.UpdateCategoryRequest) (*domain.Category, error) {
 	// Get existing category
-	category, err := u.categoryRepo.GetByID(id)
+	existingCategory, err := u.categoryRepo.GetByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("category not found")
@@ -80,7 +92,7 @@ func (u *CategoryUsecase) UpdateCategory(id uint64, req *domain.UpdateCategoryRe
 	}
 
 	// Store original name for comparison
-	originalName := category.Name
+	originalName := existingCategory.Name
 
 	// Check if new name already exists (excluding current category)
 	if req.Name != originalName {
@@ -90,8 +102,8 @@ func (u *CategoryUsecase) UpdateCategory(id uint64, req *domain.UpdateCategoryRe
 	}
 
 	// Update category fields
-	category.Name = req.Name
-	category.ParentID = req.ParentID
+	existingCategory.Name = req.Name
+	existingCategory.ParentID = req.ParentID
 	// Update slug if name changed
 	if req.Name != originalName {
 		baseSlug := utils.GenerateSlug(req.Name)
@@ -99,14 +111,14 @@ func (u *CategoryUsecase) UpdateCategory(id uint64, req *domain.UpdateCategoryRe
 			existingCategory, err := u.categoryRepo.GetBySlug(s)
 			return err == nil && existingCategory.ID != id // true if slug exists and not current category
 		})
-		category.Slug = slug
+		existingCategory.Slug = slug
 	}
 
-	if err := u.categoryRepo.Update(category); err != nil {
+	if err := u.categoryRepo.Update(existingCategory); err != nil {
 		return nil, errors.New("failed to update category")
 	}
 
-	return category, nil
+	return existingCategory, nil
 }
 
 func (u *CategoryUsecase) DeleteCategory(id uint64) error {
@@ -117,6 +129,24 @@ func (u *CategoryUsecase) DeleteCategory(id uint64) error {
 			return errors.New("category not found")
 		}
 		return errors.New("failed to get category")
+	}
+
+	// Check if category has any children (active or inactive)
+	children, err := u.categoryRepo.GetChildrenByParentID(id)
+	if err != nil {
+		return errors.New("failed to check children")
+	}
+	if len(children) > 0 {
+		return errors.New("cannot delete category with child categories")
+	}
+
+	// Check if category was ever used by any product (current or historical)
+	hasHistorical, err := u.categoryRepo.HasHistoricalProducts(id)
+	if err != nil {
+		return errors.New("failed to check product history")
+	}
+	if hasHistorical {
+		return errors.New("cannot delete category that has been used by products")
 	}
 
 	if err := u.categoryRepo.Delete(id); err != nil {
@@ -208,4 +238,72 @@ func (u *CategoryUsecase) GetChildrenByParentID(parentID uint64) ([]*domain.Cate
 	}
 
 	return children, nil
+}
+
+// DeactivateCategory implements business rules for deactivating a category
+func (u *CategoryUsecase) DeactivateCategory(categoryID uint64) error {
+	category, err := u.categoryRepo.GetByID(categoryID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("category not found")
+		}
+		return errors.New("failed to get category")
+	}
+
+	if category.Status == "inactive" {
+		return errors.New("category already inactive")
+	}
+
+	hasChild, err := u.categoryRepo.HasActiveChildren(categoryID)
+	if err != nil {
+		return errors.New("failed to check active children")
+	}
+	if hasChild {
+		return errors.New("category has active child categories")
+	}
+
+	hasProduct, err := u.categoryRepo.HasActiveProducts(categoryID)
+	if err != nil {
+		return errors.New("failed to check active products")
+	}
+	if hasProduct {
+		return errors.New("category is used by active products")
+	}
+
+	if err := u.categoryRepo.UpdateStatus(categoryID, "inactive"); err != nil {
+		return errors.New("failed to deactivate category")
+	}
+
+	return nil
+}
+
+// ActivateCategory implements business rules for activating a category
+func (u *CategoryUsecase) ActivateCategory(categoryID uint64) error {
+	category, err := u.categoryRepo.GetByID(categoryID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("category not found")
+		}
+		return errors.New("failed to get category")
+	}
+
+	if category.Status == "active" {
+		return errors.New("category already active")
+	}
+
+	if category.ParentID != nil {
+		parentStatus, err := u.categoryRepo.GetParentStatus(categoryID)
+		if err != nil {
+			return errors.New("failed to check parent status")
+		}
+		if parentStatus != "active" {
+			return errors.New("parent category inactive")
+		}
+	}
+
+	if err := u.categoryRepo.UpdateStatus(categoryID, "active"); err != nil {
+		return errors.New("failed to activate category")
+	}
+
+	return nil
 }

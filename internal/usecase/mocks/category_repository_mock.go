@@ -72,3 +72,38 @@ func (m *MockCategoryRepository) GetChildrenByParentID(parentID uint64) ([]*doma
 	}
 	return args.Get(0).([]*domain.Category), args.Error(1)
 }
+
+func (m *MockCategoryRepository) HasActiveChildren(categoryID uint64) (bool, error) {
+	args := m.Called(categoryID)
+	return args.Bool(0), args.Error(1)
+}
+
+func (m *MockCategoryRepository) HasActiveProducts(categoryID uint64) (bool, error) {
+	args := m.Called(categoryID)
+	return args.Bool(0), args.Error(1)
+}
+
+func (m *MockCategoryRepository) HasHistoricalProducts(categoryID uint64) (bool, error) {
+	args := m.Called(categoryID)
+	return args.Bool(0), args.Error(1)
+}
+
+func (m *MockCategoryRepository) UpdateStatus(categoryID uint64, status string) error {
+	args := m.Called(categoryID, status)
+	return args.Error(0)
+}
+
+func (m *MockCategoryRepository) GetParentStatus(categoryID uint64) (string, error) {
+	args := m.Called(categoryID)
+	return args.String(0), args.Error(1)
+}
+
+func (m *MockCategoryRepository) UpdateHasActiveProduct(categoryID uint64) error {
+	args := m.Called(categoryID)
+	return args.Error(0)
+}
+
+func (m *MockCategoryRepository) UpdateChildFlags(categoryID uint64) error {
+	args := m.Called(categoryID)
+	return args.Error(0)
+}

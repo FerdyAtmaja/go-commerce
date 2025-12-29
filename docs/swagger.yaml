@@ -1036,7 +1036,7 @@ paths:
       description: Create a new product category (admin only). For root category,
         omit parent_id or set to null. For subcategory, provide parent_id.
       parameters:
-      - description: 'Category creation request. For root category: {\'
+      - description: Category creation request
         in: body
         name: request
         required: true
@@ -1075,7 +1075,8 @@ paths:
     delete:
       consumes:
       - application/json
-      description: Delete an existing category (admin only)
+      description: Physical delete of category (admin only). Only allowed if never
+        used by any product in history
       parameters:
       - description: Category ID
         in: path
@@ -1098,7 +1099,7 @@ paths:
           schema:
             $ref: '#/definitions/response.Response'
         "403":
-          description: Forbidden - admin only
+          description: Forbidden - admin only or category has been used
           schema:
             $ref: '#/definitions/response.Response'
       security:
@@ -1184,13 +1185,14 @@ paths:
       summary: Update a category
       tags:
       - Categories
-  /categories/{id}/children:
-    get:
+  /categories/{id}/activate:
+    put:
       consumes:
       - application/json
-      description: Get all children categories of a parent category (public endpoint)
+      description: 'Activate a category following business rules: cannot activate
+        if parent is inactive (admin only)'
       parameters:
-      - description: Parent Category ID
+      - description: Category ID
         in: path
         name: id
         required: true
@@ -1199,93 +1201,68 @@ paths:
       - application/json
       responses:
         "200":
-          description: Children categories retrieved successfully
+          description: Category activated successfully
           schema:
-            allOf:
-            - $ref: '#/definitions/response.Response'
-            - properties:
-                data:
-                  items:
-                    $ref: '#/definitions/domain.Category'
-                  type: array
-              type: object
+            $ref: '#/definitions/response.Response'
         "400":
-          description: Invalid parent category ID
+          description: Bad request
           schema:
             $ref: '#/definitions/response.Response'
-        "404":
-          description: Parent category not found
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/response.Response'
-      summary: Get children categories
+        "403":
+          description: Forbidden - admin only
+          schema:
+            $ref: '#/definitions/response.Response'
+        "409":
+          description: Conflict - parent category is inactive
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Activate a category
       tags:
       - Categories
-  /categories/root:
-    get:
+  /categories/{id}/deactivate:
+    put:
       consumes:
       - application/json
-      description: Get all root categories (categories without parent) with pagination
-        (public endpoint)
+      description: 'Deactivate a category following business rules: cannot deactivate
+        if has active children or used by active products (admin only)'
       parameters:
-      - default: 1
-        description: Page number
-        in: query
-        name: page
-        type: integer
-      - default: 10
-        description: Items per page
-        in: query
-        name: limit
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Root categories retrieved successfully
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.PaginatedResponse'
-            - properties:
-                data:
-                  items:
-                    $ref: '#/definitions/domain.Category'
-                  type: array
-              type: object
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/response.Response'
-      summary: Get root categories
-      tags:
-      - Categories
-  /categories/slug/{slug}:
-    get:
-      consumes:
-      - application/json
-      description: Get a single category by its slug (public endpoint)
-      parameters:
-      - description: Category Slug
+      - description: Category ID
         in: path
-        name: slug
+        name: id
         required: true
-        type: string
+        type: integer
       produces:
       - application/json
       responses:
         "200":
-          description: Category retrieved successfully
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/domain.Category'
-              type: object
-        "404":
-          description: Category not found
+          description: Category deactivated successfully
           schema:
             $ref: '#/definitions/response.Response'
-      summary: Get category by slug
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden - admin only
+          schema:
+            $ref: '#/definitions/response.Response'
+        "409":
+          description: Conflict - category has active children or used by active products
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Deactivate a category
       tags:
       - Categories
   /products:

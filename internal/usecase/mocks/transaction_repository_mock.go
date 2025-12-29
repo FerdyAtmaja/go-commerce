@@ -63,3 +63,11 @@ func (m *MockTransactionRepository) CreateWithTx(dbTx interface{}, tx *domain.Tr
 	args := m.Called(dbTx, tx)
 	return args.Error(0)
 }
+
+func (m *MockTransactionRepository) GetByStatus(status string, limit, offset int) ([]*domain.Transaction, int64, error) {
+	args := m.Called(status, limit, offset)
+	if args.Get(0) == nil {
+		return nil, args.Get(1).(int64), args.Error(2)
+	}
+	return args.Get(0).([]*domain.Transaction), args.Get(1).(int64), args.Error(2)
+}
