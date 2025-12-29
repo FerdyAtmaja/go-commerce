@@ -110,13 +110,8 @@ func main() {
 	// Serve static files for uploads
 	app.Static("/uploads", "./uploads")
 
-	// Health check endpoint
-	app.Get("/health", func(c *fiber.Ctx) error {
-		return response.Success(c, "Server is running", fiber.Map{
-			"status":   "healthy",
-			"database": "connected",
-		})
-	})
+	// Initialize handlers
+	systemHandler := http.NewSystemHandler()
 
 	// Setup routes
 	router := http.NewRouter(app, jwtManager)
@@ -139,6 +134,10 @@ func main() {
 			"message": "Welcome to Go Commerce API",
 		})
 	})
+
+	// Add health and metrics to API group
+	api.Get("/health", systemHandler.HealthCheck)
+	api.Get("/metrics", systemHandler.Metrics)
 
 	// Graceful shutdown
 	c := make(chan os.Signal, 1)

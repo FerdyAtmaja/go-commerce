@@ -24,7 +24,7 @@ func (r *productRepository) GetByID(id uint64) (*domain.Product, error) {
 	var product domain.Product
 	err := r.db.Preload("Toko").Preload("Category").Preload("Photos", func(db *gorm.DB) *gorm.DB {
 		return db.Order("is_primary DESC, position ASC")
-	}).Where("id = ?", id).First(&product).Error
+	}).Where("id = ? AND status = ?", id, "active").First(&product).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("product not found")
@@ -286,4 +286,19 @@ func (r *productRepository) SearchBySlug(slugPattern string, limit, offset int) 
 		Find(&products).Error
 
 	return products, total, err
+}
+
+// GetByIDForManagement gets product by ID regardless of status (for admin/seller management)
+func (r *productRepository) GetByIDForManagement(id uint64) (*domain.Product, error) {
+	var product domain.Product
+	err := r.db.Preload("Toko").Preload("Category").Preload("Photos", func(db *gorm.DB) *gorm.DB {
+		return db.Order("is_primary DESC, position ASC")
+	}).Where("id = ?", id).First(&product).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("product not found")
+		}
+		return nil, err
+	}
+	return &product, nil
 }

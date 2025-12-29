@@ -67,7 +67,13 @@ func (u *TransactionUsecase) CreateTransaction(userID uint64, req *domain.Create
 		product, err := u.productRepo.GetByID(itemReq.ProductID)
 		if err != nil {
 			u.transactionRepo.RollbackTx(dbTx)
-			return nil, errors.New("product not found")
+			return nil, errors.New("product not found or not available")
+		}
+
+		// Check if product is active
+		if product.Status != "active" {
+			u.transactionRepo.RollbackTx(dbTx)
+			return nil, errors.New("product is not available for purchase: " + product.NamaProduk)
 		}
 
 		// Check stock availability

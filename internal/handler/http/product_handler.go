@@ -433,6 +433,70 @@ func (h *ProductHandler) DeleteProductPhoto(c *fiber.Ctx) error {
 	return response.Success(c, "Photo deleted successfully", nil)
 }
 
+// SuspendProduct godoc
+// @Summary Suspend a product (Admin only)
+// @Description Force deactivate a product for violations, reports, etc. Admin can suspend any product without seller permission.
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Product ID"
+// @Success 200 {object} response.Response "Product suspended successfully"
+// @Failure 400 {object} response.Response "Bad request"
+// @Failure 401 {object} response.Response "Unauthorized"
+// @Failure 403 {object} response.Response "Forbidden - admin only"
+// @Failure 404 {object} response.Response "Product not found"
+// @Failure 409 {object} response.Response "Conflict - product already suspended"
+// @Router /admin/products/{id}/suspend [put]
+func (h *ProductHandler) SuspendProduct(c *fiber.Ctx) error {
+	id, err := strconv.ParseUint(c.Params("id"), 10, 64)
+	if err != nil {
+		return response.BadRequest(c, "Invalid product ID")
+	}
+
+	err = h.productUsecase.SuspendProduct(id)
+	if err != nil {
+		if strings.Contains(err.Error(), "already suspended") {
+			return response.Conflict(c, err.Error())
+		}
+		return response.BadRequest(c, err.Error())
+	}
+
+	return response.Success(c, "Product suspended successfully", nil)
+}
+
+// UnsuspendProduct godoc
+// @Summary Unsuspend a product (Admin only)
+// @Description Reactivate a suspended product. Admin can unsuspend any product to make it active again.
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Product ID"
+// @Success 200 {object} response.Response "Product unsuspended successfully"
+// @Failure 400 {object} response.Response "Bad request"
+// @Failure 401 {object} response.Response "Unauthorized"
+// @Failure 403 {object} response.Response "Forbidden - admin only"
+// @Failure 404 {object} response.Response "Product not found"
+// @Failure 409 {object} response.Response "Conflict - product is not suspended"
+// @Router /admin/products/{id}/unsuspend [put]
+func (h *ProductHandler) UnsuspendProduct(c *fiber.Ctx) error {
+	id, err := strconv.ParseUint(c.Params("id"), 10, 64)
+	if err != nil {
+		return response.BadRequest(c, "Invalid product ID")
+	}
+
+	err = h.productUsecase.UnsuspendProduct(id)
+	if err != nil {
+		if strings.Contains(err.Error(), "not suspended") {
+			return response.Conflict(c, err.Error())
+		}
+		return response.BadRequest(c, err.Error())
+	}
+
+	return response.Success(c, "Product unsuspended successfully", nil)
+}
+
 // GetProductsByStatus godoc
 // @Summary Get products by status (Admin only)
 // @Description Get products filtered by status with pagination
@@ -440,7 +504,7 @@ func (h *ProductHandler) DeleteProductPhoto(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param status query string true "Product status: active or inactive"
+// @Param status query string true "Product status: active, inactive, or suspended"
 // @Param page query int false "Page number" default(1)
 // @Param limit query int false "Items per page" default(10)
 // @Success 200 {object} response.PaginatedResponse{data=[]domain.Product} "Products retrieved successfully"
@@ -454,8 +518,8 @@ func (h *ProductHandler) GetProductsByStatus(c *fiber.Ctx) error {
 		return response.BadRequest(c, "Status parameter is required")
 	}
 
-	if status != "active" && status != "inactive" {
-		return response.BadRequest(c, "Status must be 'active' or 'inactive'")
+	if status != "active" && status != "inactive" && status != "suspended" {
+		return response.BadRequest(c, "Status must be 'active', 'inactive', or 'suspended'")
 	}
 
 	page, _ := strconv.Atoi(c.Query("page", "1"))
@@ -500,52 +564,73 @@ func generateFileName(originalName string) string {
 	
 	return fmt.Sprintf("%s_%d_%s%s", name, timestamp, uuid[:8], ext)
 }
-// UpdateProductStatus godoc
-// @Summary Update product status (Seller only)
-// @Description Update product status (active/inactive). Only the product owner can change status. Business rules: store and category must be active to activate product.
+// ActivateProduct godoc
+// @Summary Activate a product (Seller only)
+// @Description Activate a product following business rules: store and category must be active, stock must be > 0. Only product owner can activate.
 // @Tags Products
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param id path int true "Product ID"
-// @Param request body map[string]string true "Status update request" example({"status":"active"})
-// @Success 200 {object} response.Response "Product status updated successfully"
+// @Success 200 {object} response.Response "Product activated successfully"
 // @Failure 400 {object} response.Response "Bad request"
 // @Failure 401 {object} response.Response "Unauthorized"
-// @Failure 403 {object} response.Response "Forbidden - not product owner or store inactive"
-// @Failure 409 {object} response.Response "Conflict - business rule violation (category inactive, out of stock, etc.)"
-// @Router /products/{id}/status [put]
-func (h *ProductHandler) UpdateProductStatus(c *fiber.Ctx) error {
+// @Failure 403 {object} response.Response "Forbidden - store inactive or not product owner"
+// @Failure 409 {object} response.Response "Conflict - already active, category inactive, or out of stock"
+// @Router /products/{id}/activate [put]
+func (h *ProductHandler) ActivateProduct(c *fiber.Ctx) error {
 	id, err := strconv.ParseUint(c.Params("id"), 10, 64)
 	if err != nil {
 		return response.BadRequest(c, "Invalid product ID")
 	}
 
-	var req map[string]string
-	if err := c.BodyParser(&req); err != nil {
-		return response.BadRequest(c, "Invalid request body")
-	}
-
-	status, exists := req["status"]
-	if !exists {
-		return response.BadRequest(c, "Status is required")
-	}
-
-	if status != "active" && status != "inactive" {
-		return response.BadRequest(c, "Status must be 'active' or 'inactive'")
-	}
-
 	userID := middleware.GetUserID(c)
-	err = h.productUsecase.UpdateProductStatus(userID, id, status)
+	err = h.productUsecase.ActivateProduct(userID, id)
 	if err != nil {
-		// Business rule violations return 409 Conflict
-		if strings.Contains(err.Error(), "store inactive") || 
-		   strings.Contains(err.Error(), "category inactive") ||
+		if strings.Contains(err.Error(), "already active") {
+			return response.Conflict(c, err.Error())
+		}
+		if strings.Contains(err.Error(), "store inactive") {
+			return response.Forbidden(c, err.Error())
+		}
+		if strings.Contains(err.Error(), "category inactive") || 
 		   strings.Contains(err.Error(), "out of stock") {
 			return response.Conflict(c, err.Error())
 		}
 		return response.BadRequest(c, err.Error())
 	}
 
-	return response.Success(c, "Product status updated successfully", nil)
+	return response.Success(c, "Product activated successfully", nil)
+}
+
+// DeactivateProduct godoc
+// @Summary Deactivate a product (Seller only)
+// @Description Deactivate a product. Only product owner can deactivate their products.
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Product ID"
+// @Success 200 {object} response.Response "Product deactivated successfully"
+// @Failure 400 {object} response.Response "Bad request"
+// @Failure 401 {object} response.Response "Unauthorized"
+// @Failure 403 {object} response.Response "Forbidden - not product owner"
+// @Failure 409 {object} response.Response "Conflict - already inactive"
+// @Router /products/{id}/deactivate [put]
+func (h *ProductHandler) DeactivateProduct(c *fiber.Ctx) error {
+	id, err := strconv.ParseUint(c.Params("id"), 10, 64)
+	if err != nil {
+		return response.BadRequest(c, "Invalid product ID")
+	}
+
+	userID := middleware.GetUserID(c)
+	err = h.productUsecase.DeactivateProduct(userID, id)
+	if err != nil {
+		if strings.Contains(err.Error(), "already inactive") {
+			return response.Conflict(c, err.Error())
+		}
+		return response.BadRequest(c, err.Error())
+	}
+
+	return response.Success(c, "Product deactivated successfully", nil)
 }

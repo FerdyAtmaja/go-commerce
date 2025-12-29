@@ -54,6 +54,7 @@ func (PhotoProduk) TableName() string {
 type ProductRepository interface {
 	Create(product *Product) error
 	GetByID(id uint64) (*Product, error)
+	GetByIDForManagement(id uint64) (*Product, error)
 	GetBySlug(slug string) (*Product, error)
 	SearchBySlug(slugPattern string, limit, offset int) ([]*Product, int64, error)
 	GetByTokoID(tokoID uint64, limit, offset int, search string) ([]*Product, int64, error)

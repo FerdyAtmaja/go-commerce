@@ -31,7 +31,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get all addresses for the authenticated user with pagination",
+                "description": "Get all addresses for the authenticated user with pagination. Requires authentication.",
                 "consumes": [
                     "application/json"
                 ],
@@ -41,7 +41,7 @@ const docTemplate = `{
                 "tags": [
                     "Addresses"
                 ],
-                "summary": "Get current user's addresses",
+                "summary": "Get current user's addresses (Authenticated User)",
                 "parameters": [
                     {
                         "type": "integer",
@@ -100,7 +100,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Create a new address for the authenticated user",
+                "description": "Create a new address for the authenticated user. Requires authentication.",
                 "consumes": [
                     "application/json"
                 ],
@@ -110,7 +110,7 @@ const docTemplate = `{
                 "tags": [
                     "Addresses"
                 ],
-                "summary": "Create a new address",
+                "summary": "Create a new address (Authenticated User)",
                 "parameters": [
                     {
                         "description": "Address creation request",
@@ -163,7 +163,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get the default address for the authenticated user",
+                "description": "Get the default address for the authenticated user. Requires authentication.",
                 "consumes": [
                     "application/json"
                 ],
@@ -173,7 +173,7 @@ const docTemplate = `{
                 "tags": [
                     "Addresses"
                 ],
-                "summary": "Get default address",
+                "summary": "Get default address (Authenticated User)",
                 "responses": {
                     "200": {
                         "description": "Default address retrieved successfully",
@@ -215,7 +215,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get a single address by its ID (owner only)",
+                "description": "Get a single address by its ID (owner only). Only address owner can access.",
                 "consumes": [
                     "application/json"
                 ],
@@ -225,7 +225,7 @@ const docTemplate = `{
                 "tags": [
                     "Addresses"
                 ],
-                "summary": "Get address by ID",
+                "summary": "Get address by ID (Authenticated User)",
                 "parameters": [
                     {
                         "type": "integer",
@@ -280,7 +280,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Update an existing address (owner only)",
+                "description": "Update an existing address (owner only). Only address owner can update.",
                 "consumes": [
                     "application/json"
                 ],
@@ -290,7 +290,7 @@ const docTemplate = `{
                 "tags": [
                     "Addresses"
                 ],
-                "summary": "Update an address",
+                "summary": "Update an address (Authenticated User)",
                 "parameters": [
                     {
                         "type": "integer",
@@ -354,7 +354,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Delete an existing address (owner only)",
+                "description": "Delete an existing address (owner only). Only address owner can delete.",
                 "consumes": [
                     "application/json"
                 ],
@@ -364,7 +364,7 @@ const docTemplate = `{
                 "tags": [
                     "Addresses"
                 ],
-                "summary": "Delete an address",
+                "summary": "Delete an address (Authenticated User)",
                 "parameters": [
                     {
                         "type": "integer",
@@ -409,7 +409,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Set an address as default for the authenticated user",
+                "description": "Set an address as default for the authenticated user. Requires authentication.",
                 "consumes": [
                     "application/json"
                 ],
@@ -419,7 +419,7 @@ const docTemplate = `{
                 "tags": [
                     "Addresses"
                 ],
-                "summary": "Set default address",
+                "summary": "Set default address (Authenticated User)",
                 "parameters": [
                     {
                         "type": "integer",
@@ -457,9 +457,143 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/products/{id}/suspend": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Force deactivate a product for violations, reports, etc. Admin can suspend any product without seller permission.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Suspend a product (Admin only)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Product ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Product suspended successfully",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - admin only",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Product not found",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict - product already suspended",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/products/{id}/unsuspend": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Reactivate a suspended product. Admin can unsuspend any product to make it active again.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Unsuspend a product (Admin only)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Product ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Product unsuspended successfully",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - admin only",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Product not found",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict - product is not suspended",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
-                "description": "Authenticate user with email and password",
+                "description": "Authenticate user with email and password. This is a public endpoint accessible to everyone.",
                 "consumes": [
                     "application/json"
                 ],
@@ -469,7 +603,7 @@ const docTemplate = `{
                 "tags": [
                     "Authentication"
                 ],
-                "summary": "User login",
+                "summary": "User login (Public)",
                 "parameters": [
                     {
                         "description": "Login request",
@@ -516,7 +650,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Logout current user",
+                "description": "Logout current user. Requires authentication.",
                 "consumes": [
                     "application/json"
                 ],
@@ -526,10 +660,16 @@ const docTemplate = `{
                 "tags": [
                     "Authentication"
                 ],
-                "summary": "User logout",
+                "summary": "User logout (Authenticated User)",
                 "responses": {
                     "200": {
                         "description": "Logout successful",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -539,7 +679,7 @@ const docTemplate = `{
         },
         "/auth/register": {
             "post": {
-                "description": "Register a new user with email, password, and profile information",
+                "description": "Register a new user with email, password, and profile information. This is a public endpoint accessible to everyone.",
                 "consumes": [
                     "application/json"
                 ],
@@ -549,7 +689,7 @@ const docTemplate = `{
                 "tags": [
                     "Authentication"
                 ],
-                "summary": "Register a new user",
+                "summary": "Register a new user (Public)",
                 "parameters": [
                     {
                         "description": "Registration request",
@@ -591,7 +731,7 @@ const docTemplate = `{
         },
         "/categories": {
             "get": {
-                "description": "Get all product categories with pagination (public endpoint)",
+                "description": "Get all product categories with pagination. This is a public endpoint accessible to everyone.",
                 "consumes": [
                     "application/json"
                 ],
@@ -601,7 +741,7 @@ const docTemplate = `{
                 "tags": [
                     "Categories"
                 ],
-                "summary": "Get all categories",
+                "summary": "Get all categories (Public)",
                 "parameters": [
                     {
                         "type": "integer",
@@ -664,7 +804,7 @@ const docTemplate = `{
                 "tags": [
                     "Categories"
                 ],
-                "summary": "Create a new category",
+                "summary": "Create a new category (Admin only)",
                 "parameters": [
                     {
                         "description": "Category creation request",
@@ -718,7 +858,7 @@ const docTemplate = `{
         },
         "/categories/{id}": {
             "get": {
-                "description": "Get a single category by its ID (public endpoint)",
+                "description": "Get a single category by its ID. This is a public endpoint accessible to everyone.",
                 "consumes": [
                     "application/json"
                 ],
@@ -728,7 +868,7 @@ const docTemplate = `{
                 "tags": [
                     "Categories"
                 ],
-                "summary": "Get category by ID",
+                "summary": "Get category by ID (Public)",
                 "parameters": [
                     {
                         "type": "integer",
@@ -787,7 +927,7 @@ const docTemplate = `{
                 "tags": [
                     "Categories"
                 ],
-                "summary": "Update a category",
+                "summary": "Update a category (Admin only)",
                 "parameters": [
                     {
                         "type": "integer",
@@ -861,7 +1001,7 @@ const docTemplate = `{
                 "tags": [
                     "Categories"
                 ],
-                "summary": "Delete a category",
+                "summary": "Delete a category (Admin only)",
                 "parameters": [
                     {
                         "type": "integer",
@@ -916,7 +1056,7 @@ const docTemplate = `{
                 "tags": [
                     "Categories"
                 ],
-                "summary": "Activate a category",
+                "summary": "Activate a category (Admin only)",
                 "parameters": [
                     {
                         "type": "integer",
@@ -977,7 +1117,7 @@ const docTemplate = `{
                 "tags": [
                     "Categories"
                 ],
-                "summary": "Deactivate a category",
+                "summary": "Deactivate a category (Admin only)",
                 "parameters": [
                     {
                         "type": "integer",
@@ -1021,9 +1161,85 @@ const docTemplate = `{
                 }
             }
         },
+        "/health": {
+            "get": {
+                "description": "Check if the server is running and database is connected",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "System"
+                ],
+                "summary": "Health check endpoint",
+                "responses": {
+                    "200": {
+                        "description": "Server is healthy",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/metrics": {
+            "get": {
+                "description": "Get basic application metrics and version information",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "System"
+                ],
+                "summary": "Application metrics endpoint",
+                "responses": {
+                    "200": {
+                        "description": "Application metrics",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/products": {
             "get": {
-                "description": "Get all products with pagination and filtering (public endpoint)",
+                "description": "Get all products with pagination and filtering. This is a public endpoint accessible to everyone.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1033,7 +1249,7 @@ const docTemplate = `{
                 "tags": [
                     "Products"
                 ],
-                "summary": "Get all products",
+                "summary": "Get all products (Public)",
                 "parameters": [
                     {
                         "type": "integer",
@@ -1117,7 +1333,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Create a new product for the authenticated user's store",
+                "description": "Create a new product for the authenticated user's store. Only store owners can create products.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1127,7 +1343,7 @@ const docTemplate = `{
                 "tags": [
                     "Products"
                 ],
-                "summary": "Create a new product",
+                "summary": "Create a new product (Seller only)",
                 "parameters": [
                     {
                         "description": "Product creation request",
@@ -1169,6 +1385,12 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
+                    },
+                    "403": {
+                        "description": "Forbidden - store owner only",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
                     }
                 }
             }
@@ -1180,7 +1402,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get all products owned by the authenticated user with pagination and search",
+                "description": "Get all products owned by the authenticated user with pagination and search. Only store owners can access their products.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1190,7 +1412,7 @@ const docTemplate = `{
                 "tags": [
                     "Products"
                 ],
-                "summary": "Get current user's products",
+                "summary": "Get current user's products (Seller only)",
                 "parameters": [
                     {
                         "type": "integer",
@@ -1241,6 +1463,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/response.Response"
                         }
                     },
+                    "403": {
+                        "description": "Forbidden - store owner only",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
@@ -1252,7 +1480,7 @@ const docTemplate = `{
         },
         "/products/search/slug": {
             "get": {
-                "description": "Search products by partial slug match with pagination",
+                "description": "Search products by partial slug match with pagination. This is a public endpoint accessible to everyone.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1262,7 +1490,7 @@ const docTemplate = `{
                 "tags": [
                     "Products"
                 ],
-                "summary": "Search products by slug pattern",
+                "summary": "Search products by slug pattern (Public)",
                 "parameters": [
                     {
                         "type": "string",
@@ -1319,7 +1547,7 @@ const docTemplate = `{
         },
         "/products/slug/{slug}": {
             "get": {
-                "description": "Get a single product by its exact slug (public endpoint)",
+                "description": "Get a single product by its exact slug. This is a public endpoint accessible to everyone.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1329,7 +1557,7 @@ const docTemplate = `{
                 "tags": [
                     "Products"
                 ],
-                "summary": "Get product by slug",
+                "summary": "Get product by slug (Public)",
                 "parameters": [
                     {
                         "type": "string",
@@ -1394,7 +1622,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Product status: active or inactive",
+                        "description": "Product status: active, inactive, or suspended",
                         "name": "status",
                         "in": "query",
                         "required": true
@@ -1459,7 +1687,7 @@ const docTemplate = `{
         },
         "/products/{id}": {
             "get": {
-                "description": "Get a single product by its ID (public endpoint)",
+                "description": "Get a single product by its ID. This is a public endpoint accessible to everyone.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1469,7 +1697,7 @@ const docTemplate = `{
                 "tags": [
                     "Products"
                 ],
-                "summary": "Get product by ID",
+                "summary": "Get product by ID (Public)",
                 "parameters": [
                     {
                         "type": "integer",
@@ -1518,7 +1746,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Update an existing product (owner only)",
+                "description": "Update an existing product. Only the product owner can update their products.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1528,7 +1756,7 @@ const docTemplate = `{
                 "tags": [
                     "Products"
                 ],
-                "summary": "Update a product",
+                "summary": "Update a product (Seller only)",
                 "parameters": [
                     {
                         "type": "integer",
@@ -1592,7 +1820,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Delete an existing product (owner only)",
+                "description": "Delete an existing product. Only the product owner can delete their products.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1602,7 +1830,7 @@ const docTemplate = `{
                 "tags": [
                     "Products"
                 ],
-                "summary": "Delete a product",
+                "summary": "Delete a product (Seller only)",
                 "parameters": [
                     {
                         "type": "integer",
@@ -1640,6 +1868,128 @@ const docTemplate = `{
                 }
             }
         },
+        "/products/{id}/activate": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Activate a product following business rules: store and category must be active, stock must be \u003e 0. Only product owner can activate.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Activate a product (Seller only)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Product ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Product activated successfully",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - store inactive or not product owner",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict - already active, category inactive, or out of stock",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/products/{id}/deactivate": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Deactivate a product. Only product owner can deactivate their products.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Deactivate a product (Seller only)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Product ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Product deactivated successfully",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - not product owner",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict - already inactive",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/products/{id}/photos": {
             "post": {
                 "security": [
@@ -1647,7 +1997,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Upload a photo for a product (owner only)",
+                "description": "Upload a photo for a product. Only the product owner can upload photos.",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -1657,7 +2007,7 @@ const docTemplate = `{
                 "tags": [
                     "Products"
                 ],
-                "summary": "Upload product photo",
+                "summary": "Upload product photo (Seller only)",
                 "parameters": [
                     {
                         "type": "integer",
@@ -1728,7 +2078,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Delete a photo from a product (owner only)",
+                "description": "Delete a photo from a product. Only the product owner can manage photos.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1738,7 +2088,7 @@ const docTemplate = `{
                 "tags": [
                     "Products"
                 ],
-                "summary": "Delete product photo",
+                "summary": "Delete product photo (Seller only)",
                 "parameters": [
                     {
                         "type": "integer",
@@ -1790,7 +2140,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Set a photo as the primary photo for a product (owner only)",
+                "description": "Set a photo as the primary photo for a product. Only the product owner can manage photos.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1800,7 +2150,7 @@ const docTemplate = `{
                 "tags": [
                     "Products"
                 ],
-                "summary": "Set primary photo",
+                "summary": "Set primary photo (Seller only)",
                 "parameters": [
                     {
                         "type": "integer",
@@ -1847,7 +2197,7 @@ const docTemplate = `{
         },
         "/regions/provinces": {
             "get": {
-                "description": "Get all provinces in Indonesia (public endpoint)",
+                "description": "Get all provinces in Indonesia. This is a public endpoint accessible to everyone.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1857,7 +2207,7 @@ const docTemplate = `{
                 "tags": [
                     "Regions"
                 ],
-                "summary": "Get all provinces",
+                "summary": "Get all provinces (Public)",
                 "responses": {
                     "200": {
                         "description": "Provinces retrieved successfully",
@@ -1891,7 +2241,7 @@ const docTemplate = `{
         },
         "/regions/provinces/{provinceId}/cities": {
             "get": {
-                "description": "Get all cities in a specific province (public endpoint)",
+                "description": "Get all cities in a specific province. This is a public endpoint accessible to everyone.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1901,7 +2251,7 @@ const docTemplate = `{
                 "tags": [
                     "Regions"
                 ],
-                "summary": "Get cities by province",
+                "summary": "Get cities by province (Public)",
                 "parameters": [
                     {
                         "type": "string",
@@ -1950,7 +2300,7 @@ const docTemplate = `{
         },
         "/stores": {
             "get": {
-                "description": "Get all stores with pagination and search (public endpoint)",
+                "description": "Get all stores with pagination and search. This is a public endpoint accessible to everyone.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1960,7 +2310,7 @@ const docTemplate = `{
                 "tags": [
                     "Stores"
                 ],
-                "summary": "Get all stores",
+                "summary": "Get all stores (Public)",
                 "parameters": [
                     {
                         "type": "integer",
@@ -2019,7 +2369,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Create a new store for the authenticated user",
+                "description": "Create a new store for the authenticated user. Requires authentication.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2029,7 +2379,7 @@ const docTemplate = `{
                 "tags": [
                     "Stores"
                 ],
-                "summary": "Create a new store",
+                "summary": "Create a new store (Authenticated User)",
                 "parameters": [
                     {
                         "description": "Store creation request",
@@ -2082,7 +2432,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get store information for the authenticated user",
+                "description": "Get store information for the authenticated user. Only store owners can access their store.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2092,7 +2442,7 @@ const docTemplate = `{
                 "tags": [
                     "Stores"
                 ],
-                "summary": "Get current user's store",
+                "summary": "Get current user's store (Seller only)",
                 "responses": {
                     "200": {
                         "description": "Store retrieved successfully",
@@ -2132,7 +2482,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Update store information for the authenticated user",
+                "description": "Update store information for the authenticated user. Only store owners can update their store.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2142,7 +2492,7 @@ const docTemplate = `{
                 "tags": [
                     "Stores"
                 ],
-                "summary": "Update current user's store",
+                "summary": "Update current user's store (Seller only)",
                 "parameters": [
                     {
                         "description": "Store update request",
@@ -2190,7 +2540,7 @@ const docTemplate = `{
         },
         "/stores/{id}": {
             "get": {
-                "description": "Get a single store by its ID (public endpoint)",
+                "description": "Get a single store by its ID. This is a public endpoint accessible to everyone.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2200,7 +2550,7 @@ const docTemplate = `{
                 "tags": [
                     "Stores"
                 ],
-                "summary": "Get store by ID",
+                "summary": "Get store by ID (Public)",
                 "parameters": [
                     {
                         "type": "integer",
@@ -2251,7 +2601,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Create a new transaction with multiple items (atomic operation)",
+                "description": "Create a new transaction with multiple items (atomic operation). Requires authentication.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2261,7 +2611,7 @@ const docTemplate = `{
                 "tags": [
                     "Transactions"
                 ],
-                "summary": "Create a new transaction",
+                "summary": "Create a new transaction (Authenticated User)",
                 "parameters": [
                     {
                         "description": "Transaction creation request",
@@ -2314,7 +2664,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get current user's transaction history with pagination",
+                "description": "Get current user's transaction history with pagination. Requires authentication.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2324,7 +2674,7 @@ const docTemplate = `{
                 "tags": [
                     "Transactions"
                 ],
-                "summary": "Get my transactions",
+                "summary": "Get my transactions (Authenticated User)",
                 "parameters": [
                     {
                         "type": "integer",
@@ -2385,7 +2735,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get a specific transaction by ID (ownership validation)",
+                "description": "Get a specific transaction by ID (ownership validation). Only transaction owner can access.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2395,7 +2745,7 @@ const docTemplate = `{
                 "tags": [
                     "Transactions"
                 ],
-                "summary": "Get transaction by ID",
+                "summary": "Get transaction by ID (Authenticated User)",
                 "parameters": [
                     {
                         "type": "integer",
@@ -2452,7 +2802,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Change current user password",
+                "description": "Change current user password. Requires authentication.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2462,7 +2812,7 @@ const docTemplate = `{
                 "tags": [
                     "Users"
                 ],
-                "summary": "Change user password",
+                "summary": "Change user password (Authenticated User)",
                 "parameters": [
                     {
                         "description": "Password change request",
@@ -2503,7 +2853,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get current user profile information",
+                "description": "Get current user profile information. Requires authentication.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2513,7 +2863,7 @@ const docTemplate = `{
                 "tags": [
                     "Users"
                 ],
-                "summary": "Get user profile",
+                "summary": "Get user profile (Authenticated User)",
                 "responses": {
                     "200": {
                         "description": "Profile retrieved successfully",
@@ -2553,7 +2903,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Update current user profile information",
+                "description": "Update current user profile information. Requires authentication.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2563,7 +2913,7 @@ const docTemplate = `{
                 "tags": [
                     "Users"
                 ],
-                "summary": "Update user profile",
+                "summary": "Update user profile (Authenticated User)",
                 "parameters": [
                     {
                         "description": "Profile update request",
@@ -2695,8 +3045,17 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
+                "has_active_product": {
+                    "type": "boolean"
+                },
+                "has_child": {
+                    "type": "boolean"
+                },
                 "id": {
                     "type": "integer"
+                },
+                "is_leaf": {
+                    "type": "boolean"
                 },
                 "name": {
                     "type": "string",
@@ -2715,6 +3074,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "slug": {
+                    "type": "string"
+                },
+                "status": {
                     "type": "string"
                 },
                 "updated_at": {
@@ -2796,7 +3158,8 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "maxLength": 100,
-                    "minLength": 2
+                    "minLength": 2,
+                    "example": "Electronics"
                 },
                 "parent_id": {
                     "type": "integer",
@@ -3322,7 +3685,8 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "maxLength": 100,
-                    "minLength": 2
+                    "minLength": 2,
+                    "example": "Updated Electronics"
                 },
                 "parent_id": {
                     "type": "integer",

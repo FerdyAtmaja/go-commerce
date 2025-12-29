@@ -55,8 +55,14 @@ definitions:
         type: array
       created_at:
         type: string
+      has_active_product:
+        type: boolean
+      has_child:
+        type: boolean
       id:
         type: integer
+      is_leaf:
+        type: boolean
       name:
         maxLength: 100
         minLength: 2
@@ -68,6 +74,8 @@ definitions:
       parent_id:
         type: integer
       slug:
+        type: string
+      status:
         type: string
       updated_at:
         type: string
@@ -123,6 +131,7 @@ definitions:
   domain.CreateCategoryRequest:
     properties:
       name:
+        example: Electronics
         maxLength: 100
         minLength: 2
         type: string
@@ -481,6 +490,7 @@ definitions:
   domain.UpdateCategoryRequest:
     properties:
       name:
+        example: Updated Electronics
         maxLength: 100
         minLength: 2
         type: string
@@ -655,7 +665,8 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get all addresses for the authenticated user with pagination
+      description: Get all addresses for the authenticated user with pagination. Requires
+        authentication.
       parameters:
       - default: 1
         description: Page number
@@ -691,13 +702,13 @@ paths:
             $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Get current user's addresses
+      summary: Get current user's addresses (Authenticated User)
       tags:
       - Addresses
     post:
       consumes:
       - application/json
-      description: Create a new address for the authenticated user
+      description: Create a new address for the authenticated user. Requires authentication.
       parameters:
       - description: Address creation request
         in: body
@@ -727,14 +738,15 @@ paths:
             $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Create a new address
+      summary: Create a new address (Authenticated User)
       tags:
       - Addresses
   /addresses/{id}:
     delete:
       consumes:
       - application/json
-      description: Delete an existing address (owner only)
+      description: Delete an existing address (owner only). Only address owner can
+        delete.
       parameters:
       - description: Address ID
         in: path
@@ -762,13 +774,14 @@ paths:
             $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Delete an address
+      summary: Delete an address (Authenticated User)
       tags:
       - Addresses
     get:
       consumes:
       - application/json
-      description: Get a single address by its ID (owner only)
+      description: Get a single address by its ID (owner only). Only address owner
+        can access.
       parameters:
       - description: Address ID
         in: path
@@ -801,13 +814,14 @@ paths:
             $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Get address by ID
+      summary: Get address by ID (Authenticated User)
       tags:
       - Addresses
     put:
       consumes:
       - application/json
-      description: Update an existing address (owner only)
+      description: Update an existing address (owner only). Only address owner can
+        update.
       parameters:
       - description: Address ID
         in: path
@@ -846,14 +860,15 @@ paths:
             $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Update an address
+      summary: Update an address (Authenticated User)
       tags:
       - Addresses
   /addresses/{id}/default:
     put:
       consumes:
       - application/json
-      description: Set an address as default for the authenticated user
+      description: Set an address as default for the authenticated user. Requires
+        authentication.
       parameters:
       - description: Address ID
         in: path
@@ -881,14 +896,14 @@ paths:
             $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Set default address
+      summary: Set default address (Authenticated User)
       tags:
       - Addresses
   /addresses/default:
     get:
       consumes:
       - application/json
-      description: Get the default address for the authenticated user
+      description: Get the default address for the authenticated user. Requires authentication.
       produces:
       - application/json
       responses:
@@ -911,14 +926,103 @@ paths:
             $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Get default address
+      summary: Get default address (Authenticated User)
       tags:
       - Addresses
+  /admin/products/{id}/suspend:
+    put:
+      consumes:
+      - application/json
+      description: Force deactivate a product for violations, reports, etc. Admin
+        can suspend any product without seller permission.
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Product suspended successfully
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden - admin only
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Product not found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "409":
+          description: Conflict - product already suspended
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Suspend a product (Admin only)
+      tags:
+      - Products
+  /admin/products/{id}/unsuspend:
+    put:
+      consumes:
+      - application/json
+      description: Reactivate a suspended product. Admin can unsuspend any product
+        to make it active again.
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Product unsuspended successfully
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden - admin only
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Product not found
+          schema:
+            $ref: '#/definitions/response.Response'
+        "409":
+          description: Conflict - product is not suspended
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Unsuspend a product (Admin only)
+      tags:
+      - Products
   /auth/login:
     post:
       consumes:
       - application/json
-      description: Authenticate user with email and password
+      description: Authenticate user with email and password. This is a public endpoint
+        accessible to everyone.
       parameters:
       - description: Login request
         in: body
@@ -942,14 +1046,14 @@ paths:
           description: Bad request
           schema:
             $ref: '#/definitions/response.Response'
-      summary: User login
+      summary: User login (Public)
       tags:
       - Authentication
   /auth/logout:
     post:
       consumes:
       - application/json
-      description: Logout current user
+      description: Logout current user. Requires authentication.
       produces:
       - application/json
       responses:
@@ -957,16 +1061,21 @@ paths:
           description: Logout successful
           schema:
             $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: User logout
+      summary: User logout (Authenticated User)
       tags:
       - Authentication
   /auth/register:
     post:
       consumes:
       - application/json
-      description: Register a new user with email, password, and profile information
+      description: Register a new user with email, password, and profile information.
+        This is a public endpoint accessible to everyone.
       parameters:
       - description: Registration request
         in: body
@@ -990,14 +1099,15 @@ paths:
           description: Bad request
           schema:
             $ref: '#/definitions/response.Response'
-      summary: Register a new user
+      summary: Register a new user (Public)
       tags:
       - Authentication
   /categories:
     get:
       consumes:
       - application/json
-      description: Get all product categories with pagination (public endpoint)
+      description: Get all product categories with pagination. This is a public endpoint
+        accessible to everyone.
       parameters:
       - default: 1
         description: Page number
@@ -1027,7 +1137,7 @@ paths:
           description: Internal server error
           schema:
             $ref: '#/definitions/response.Response'
-      summary: Get all categories
+      summary: Get all categories (Public)
       tags:
       - Categories
     post:
@@ -1068,7 +1178,7 @@ paths:
             $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Create a new category
+      summary: Create a new category (Admin only)
       tags:
       - Categories
   /categories/{id}:
@@ -1104,13 +1214,14 @@ paths:
             $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Delete a category
+      summary: Delete a category (Admin only)
       tags:
       - Categories
     get:
       consumes:
       - application/json
-      description: Get a single category by its ID (public endpoint)
+      description: Get a single category by its ID. This is a public endpoint accessible
+        to everyone.
       parameters:
       - description: Category ID
         in: path
@@ -1137,7 +1248,7 @@ paths:
           description: Category not found
           schema:
             $ref: '#/definitions/response.Response'
-      summary: Get category by ID
+      summary: Get category by ID (Public)
       tags:
       - Categories
     put:
@@ -1182,7 +1293,7 @@ paths:
             $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Update a category
+      summary: Update a category (Admin only)
       tags:
       - Categories
   /categories/{id}/activate:
@@ -1222,7 +1333,7 @@ paths:
             $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Activate a category
+      summary: Activate a category (Admin only)
       tags:
       - Categories
   /categories/{id}/deactivate:
@@ -1262,14 +1373,59 @@ paths:
             $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Deactivate a category
+      summary: Deactivate a category (Admin only)
       tags:
       - Categories
+  /health:
+    get:
+      consumes:
+      - application/json
+      description: Check if the server is running and database is connected
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Server is healthy
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: string
+                  type: object
+              type: object
+      summary: Health check endpoint
+      tags:
+      - System
+  /metrics:
+    get:
+      consumes:
+      - application/json
+      description: Get basic application metrics and version information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Application metrics
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: string
+                  type: object
+              type: object
+      summary: Application metrics endpoint
+      tags:
+      - System
   /products:
     get:
       consumes:
       - application/json
-      description: Get all products with pagination and filtering (public endpoint)
+      description: Get all products with pagination and filtering. This is a public
+        endpoint accessible to everyone.
       parameters:
       - default: 1
         description: Page number
@@ -1321,13 +1477,14 @@ paths:
           description: Internal server error
           schema:
             $ref: '#/definitions/response.Response'
-      summary: Get all products
+      summary: Get all products (Public)
       tags:
       - Products
     post:
       consumes:
       - application/json
-      description: Create a new product for the authenticated user's store
+      description: Create a new product for the authenticated user's store. Only store
+        owners can create products.
       parameters:
       - description: Product creation request
         in: body
@@ -1355,16 +1512,21 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden - store owner only
+          schema:
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Create a new product
+      summary: Create a new product (Seller only)
       tags:
       - Products
   /products/{id}:
     delete:
       consumes:
       - application/json
-      description: Delete an existing product (owner only)
+      description: Delete an existing product. Only the product owner can delete their
+        products.
       parameters:
       - description: Product ID
         in: path
@@ -1392,13 +1554,14 @@ paths:
             $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Delete a product
+      summary: Delete a product (Seller only)
       tags:
       - Products
     get:
       consumes:
       - application/json
-      description: Get a single product by its ID (public endpoint)
+      description: Get a single product by its ID. This is a public endpoint accessible
+        to everyone.
       parameters:
       - description: Product ID
         in: path
@@ -1425,13 +1588,14 @@ paths:
           description: Product not found
           schema:
             $ref: '#/definitions/response.Response'
-      summary: Get product by ID
+      summary: Get product by ID (Public)
       tags:
       - Products
     put:
       consumes:
       - application/json
-      description: Update an existing product (owner only)
+      description: Update an existing product. Only the product owner can update their
+        products.
       parameters:
       - description: Product ID
         in: path
@@ -1470,14 +1634,94 @@ paths:
             $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Update a product
+      summary: Update a product (Seller only)
+      tags:
+      - Products
+  /products/{id}/activate:
+    put:
+      consumes:
+      - application/json
+      description: 'Activate a product following business rules: store and category
+        must be active, stock must be > 0. Only product owner can activate.'
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Product activated successfully
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden - store inactive or not product owner
+          schema:
+            $ref: '#/definitions/response.Response'
+        "409":
+          description: Conflict - already active, category inactive, or out of stock
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Activate a product (Seller only)
+      tags:
+      - Products
+  /products/{id}/deactivate:
+    put:
+      consumes:
+      - application/json
+      description: Deactivate a product. Only product owner can deactivate their products.
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Product deactivated successfully
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden - not product owner
+          schema:
+            $ref: '#/definitions/response.Response'
+        "409":
+          description: Conflict - already inactive
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Deactivate a product (Seller only)
       tags:
       - Products
   /products/{id}/photos:
     post:
       consumes:
       - multipart/form-data
-      description: Upload a photo for a product (owner only)
+      description: Upload a photo for a product. Only the product owner can upload
+        photos.
       parameters:
       - description: Product ID
         in: path
@@ -1520,14 +1764,15 @@ paths:
             $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Upload product photo
+      summary: Upload product photo (Seller only)
       tags:
       - Products
   /products/{id}/photos/{photoId}:
     delete:
       consumes:
       - application/json
-      description: Delete a photo from a product (owner only)
+      description: Delete a photo from a product. Only the product owner can manage
+        photos.
       parameters:
       - description: Product ID
         in: path
@@ -1560,14 +1805,15 @@ paths:
             $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Delete product photo
+      summary: Delete product photo (Seller only)
       tags:
       - Products
   /products/{id}/photos/{photoId}/primary:
     put:
       consumes:
       - application/json
-      description: Set a photo as the primary photo for a product (owner only)
+      description: Set a photo as the primary photo for a product. Only the product
+        owner can manage photos.
       parameters:
       - description: Product ID
         in: path
@@ -1600,7 +1846,7 @@ paths:
             $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Set primary photo
+      summary: Set primary photo (Seller only)
       tags:
       - Products
   /products/my:
@@ -1608,7 +1854,7 @@ paths:
       consumes:
       - application/json
       description: Get all products owned by the authenticated user with pagination
-        and search
+        and search. Only store owners can access their products.
       parameters:
       - default: 1
         description: Page number
@@ -1642,20 +1888,25 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden - store owner only
+          schema:
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal server error
           schema:
             $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Get current user's products
+      summary: Get current user's products (Seller only)
       tags:
       - Products
   /products/search/slug:
     get:
       consumes:
       - application/json
-      description: Search products by partial slug match with pagination
+      description: Search products by partial slug match with pagination. This is
+        a public endpoint accessible to everyone.
       parameters:
       - description: Slug pattern to search
         in: query
@@ -1690,14 +1941,15 @@ paths:
           description: Bad request
           schema:
             $ref: '#/definitions/response.Response'
-      summary: Search products by slug pattern
+      summary: Search products by slug pattern (Public)
       tags:
       - Products
   /products/slug/{slug}:
     get:
       consumes:
       - application/json
-      description: Get a single product by its exact slug (public endpoint)
+      description: Get a single product by its exact slug. This is a public endpoint
+        accessible to everyone.
       parameters:
       - description: Product slug
         in: path
@@ -1724,7 +1976,7 @@ paths:
           description: Product not found
           schema:
             $ref: '#/definitions/response.Response'
-      summary: Get product by slug
+      summary: Get product by slug (Public)
       tags:
       - Products
   /products/status:
@@ -1733,7 +1985,7 @@ paths:
       - application/json
       description: Get products filtered by status with pagination
       parameters:
-      - description: 'Product status: active or inactive'
+      - description: 'Product status: active, inactive, or suspended'
         in: query
         name: status
         required: true
@@ -1783,7 +2035,8 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get all provinces in Indonesia (public endpoint)
+      description: Get all provinces in Indonesia. This is a public endpoint accessible
+        to everyone.
       produces:
       - application/json
       responses:
@@ -1802,14 +2055,15 @@ paths:
           description: Internal server error
           schema:
             $ref: '#/definitions/response.Response'
-      summary: Get all provinces
+      summary: Get all provinces (Public)
       tags:
       - Regions
   /regions/provinces/{provinceId}/cities:
     get:
       consumes:
       - application/json
-      description: Get all cities in a specific province (public endpoint)
+      description: Get all cities in a specific province. This is a public endpoint
+        accessible to everyone.
       parameters:
       - description: Province ID
         in: path
@@ -1838,14 +2092,15 @@ paths:
           description: Internal server error
           schema:
             $ref: '#/definitions/response.Response'
-      summary: Get cities by province
+      summary: Get cities by province (Public)
       tags:
       - Regions
   /stores:
     get:
       consumes:
       - application/json
-      description: Get all stores with pagination and search (public endpoint)
+      description: Get all stores with pagination and search. This is a public endpoint
+        accessible to everyone.
       parameters:
       - default: 1
         description: Page number
@@ -1879,13 +2134,13 @@ paths:
           description: Internal server error
           schema:
             $ref: '#/definitions/response.Response'
-      summary: Get all stores
+      summary: Get all stores (Public)
       tags:
       - Stores
     post:
       consumes:
       - application/json
-      description: Create a new store for the authenticated user
+      description: Create a new store for the authenticated user. Requires authentication.
       parameters:
       - description: Store creation request
         in: body
@@ -1915,14 +2170,15 @@ paths:
             $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Create a new store
+      summary: Create a new store (Authenticated User)
       tags:
       - Stores
   /stores/{id}:
     get:
       consumes:
       - application/json
-      description: Get a single store by its ID (public endpoint)
+      description: Get a single store by its ID. This is a public endpoint accessible
+        to everyone.
       parameters:
       - description: Store ID
         in: path
@@ -1949,14 +2205,15 @@ paths:
           description: Store not found
           schema:
             $ref: '#/definitions/response.Response'
-      summary: Get store by ID
+      summary: Get store by ID (Public)
       tags:
       - Stores
   /stores/my:
     get:
       consumes:
       - application/json
-      description: Get store information for the authenticated user
+      description: Get store information for the authenticated user. Only store owners
+        can access their store.
       produces:
       - application/json
       responses:
@@ -1979,13 +2236,14 @@ paths:
             $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Get current user's store
+      summary: Get current user's store (Seller only)
       tags:
       - Stores
     put:
       consumes:
       - application/json
-      description: Update store information for the authenticated user
+      description: Update store information for the authenticated user. Only store
+        owners can update their store.
       parameters:
       - description: Store update request
         in: body
@@ -2015,14 +2273,15 @@ paths:
             $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Update current user's store
+      summary: Update current user's store (Seller only)
       tags:
       - Stores
   /transactions:
     post:
       consumes:
       - application/json
-      description: Create a new transaction with multiple items (atomic operation)
+      description: Create a new transaction with multiple items (atomic operation).
+        Requires authentication.
       parameters:
       - description: Transaction creation request
         in: body
@@ -2052,14 +2311,15 @@ paths:
             $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Create a new transaction
+      summary: Create a new transaction (Authenticated User)
       tags:
       - Transactions
   /transactions/{id}:
     get:
       consumes:
       - application/json
-      description: Get a specific transaction by ID (ownership validation)
+      description: Get a specific transaction by ID (ownership validation). Only transaction
+        owner can access.
       parameters:
       - description: Transaction ID
         in: path
@@ -2092,14 +2352,15 @@ paths:
             $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Get transaction by ID
+      summary: Get transaction by ID (Authenticated User)
       tags:
       - Transactions
   /transactions/my:
     get:
       consumes:
       - application/json
-      description: Get current user's transaction history with pagination
+      description: Get current user's transaction history with pagination. Requires
+        authentication.
       parameters:
       - default: 1
         description: Page number
@@ -2135,14 +2396,14 @@ paths:
             $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Get my transactions
+      summary: Get my transactions (Authenticated User)
       tags:
       - Transactions
   /users/change-password:
     put:
       consumes:
       - application/json
-      description: Change current user password
+      description: Change current user password. Requires authentication.
       parameters:
       - description: Password change request
         in: body
@@ -2167,14 +2428,14 @@ paths:
             $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Change user password
+      summary: Change user password (Authenticated User)
       tags:
       - Users
   /users/profile:
     get:
       consumes:
       - application/json
-      description: Get current user profile information
+      description: Get current user profile information. Requires authentication.
       produces:
       - application/json
       responses:
@@ -2197,13 +2458,13 @@ paths:
             $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Get user profile
+      summary: Get user profile (Authenticated User)
       tags:
       - Users
     put:
       consumes:
       - application/json
-      description: Update current user profile information
+      description: Update current user profile information. Requires authentication.
       parameters:
       - description: Profile update request
         in: body
@@ -2233,7 +2494,7 @@ paths:
             $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
-      summary: Update user profile
+      summary: Update user profile (Authenticated User)
       tags:
       - Users
 securityDefinitions:

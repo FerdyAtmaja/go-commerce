@@ -8,7 +8,7 @@ CREATE TABLE produk (
     deskripsi TEXT,
     id_toko BIGINT UNSIGNED NOT NULL,
     id_category BIGINT UNSIGNED NOT NULL,
-    status ENUM('active', 'inactive') DEFAULT 'active',
+    status ENUM('active', 'inactive', 'suspended') DEFAULT 'active',
     berat INT DEFAULT 0,
     sold_count INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

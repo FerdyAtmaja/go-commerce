@@ -112,6 +112,7 @@ func (r *Router) SetupProductRoutes(productUsecase *usecase.ProductUsecase) {
 	// Public routes
 	products.Get("/", productHandler.GetAllProducts)
 	products.Get("/status", middleware.JWTMiddleware(r.jwtManager), middleware.RequireAdmin(), productHandler.GetProductsByStatus)
+	products.Get("/search/slug", productHandler.SearchProductsBySlug)
 	products.Get("/slug/:slug", productHandler.GetProductBySlug)
 	products.Get("/:id", productHandler.GetProductByID)
 
@@ -128,7 +129,15 @@ func (r *Router) SetupProductRoutes(productUsecase *usecase.ProductUsecase) {
 	products.Delete("/:id/photos/:photoId", jwtMiddleware, productHandler.DeleteProductPhoto)
 
 	// Product status management (seller only)
-	products.Put("/:id/status", jwtMiddleware, productHandler.UpdateProductStatus)
+	products.Put("/:id/activate", jwtMiddleware, productHandler.ActivateProduct)
+	products.Put("/:id/deactivate", jwtMiddleware, productHandler.DeactivateProduct)
+
+	// Admin routes
+	admin := api.Group("/admin")
+	adminMiddleware := middleware.JWTMiddleware(r.jwtManager)
+	requireAdmin := middleware.RequireAdmin()
+	admin.Put("/products/:id/suspend", adminMiddleware, requireAdmin, productHandler.SuspendProduct)
+	admin.Put("/products/:id/unsuspend", adminMiddleware, requireAdmin, productHandler.UnsuspendProduct)
 }
 
 func (r *Router) SetupTransactionRoutes(transactionUsecase *usecase.TransactionUsecase) {

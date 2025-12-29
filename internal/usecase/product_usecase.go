@@ -8,10 +8,10 @@ import (
 )
 
 type ProductUsecase struct {
-	productRepo      domain.ProductRepository
-	photoRepo        domain.PhotoProdukRepository
-	storeRepo        domain.StoreRepository
-	categoryRepo     domain.CategoryRepository
+	productRepo  domain.ProductRepository
+	photoRepo    domain.PhotoProdukRepository
+	storeRepo    domain.StoreRepository
+	categoryRepo domain.CategoryRepository
 }
 
 func NewProductUsecase(
@@ -99,7 +99,7 @@ func (u *ProductUsecase) GetProductByID(id uint64) (*domain.Product, error) {
 		// Simulate tracking product view analytics
 		// trackProductView(id)
 	}()
-	
+
 	return u.productRepo.GetByID(id)
 }
 
@@ -146,8 +146,8 @@ func (u *ProductUsecase) GetAllProducts(filter *domain.ProductFilter) ([]*domain
 	}
 
 	// Use advanced filtering if available, otherwise fallback to basic
-	if filter.MinPrice != "" || filter.MaxPrice != "" || 
-	   (filter.SortBy != "" && filter.SortBy != "newest") {
+	if filter.MinPrice != "" || filter.MaxPrice != "" ||
+		(filter.SortBy != "" && filter.SortBy != "newest") {
 		return u.productRepo.GetAllWithFilter(filter)
 	}
 
@@ -169,8 +169,8 @@ func (u *ProductUsecase) UpdateProduct(userID, productID uint64, req *domain.Upd
 		return nil, err
 	}
 
-	// Get existing product
-	product, err := u.productRepo.GetByID(productID)
+	// Get existing product (use management method for seller access)
+	product, err := u.productRepo.GetByIDForManagement(productID)
 	if err != nil {
 		return nil, err
 	}
@@ -227,8 +227,8 @@ func (u *ProductUsecase) UpdateProduct(userID, productID uint64, req *domain.Upd
 		}()
 	}
 
-	// Return updated product with all relations
-	return u.productRepo.GetByID(productID)
+	// Return updated product with all relations (use management method)
+	return u.productRepo.GetByIDForManagement(productID)
 }
 
 func (u *ProductUsecase) DeleteProduct(userID, productID uint64) error {
@@ -245,7 +245,7 @@ func (u *ProductUsecase) DeleteProduct(userID, productID uint64) error {
 	}
 
 	// Get product to know its category before deletion
-	product, err := u.productRepo.GetByID(productID)
+	product, err := u.productRepo.GetByIDForManagement(productID)
 	if err != nil {
 		return err
 	}
@@ -361,8 +361,8 @@ func (u *ProductUsecase) GetProductsByStatus(status string, page, limit int) ([]
 	return u.productRepo.GetByStatus(status, limit, offset)
 }
 
-// UpdateProductStatus implements business rules for product status changes
-func (u *ProductUsecase) UpdateProductStatus(userID, productID uint64, status string) error {
+// ActivateProduct implements business rules for product activation
+func (u *ProductUsecase) ActivateProduct(userID, productID uint64) error {
 	// Get user's store
 	store, err := u.storeRepo.GetByUserID(userID)
 	if err != nil {
@@ -376,48 +376,130 @@ func (u *ProductUsecase) UpdateProductStatus(userID, productID uint64, status st
 	}
 
 	// Get current product
-	product, err := u.productRepo.GetByID(productID)
+	product, err := u.productRepo.GetByIDForManagement(productID)
 	if err != nil {
 		return errors.New("product not found")
 	}
 
-	// Business rules based on rancangan-update.txt
-	if status == "active" {
-		// ACTIVATE PRODUCT rules
-		if product.Status == "active" {
-			return errors.New("product already active") // 409 noop
-		}
+	// Business rules from rancangan-update.txt
+	if product.Status == "active" {
+		return errors.New("product already active") // 409 noop
+	}
 
-		// Check store status
-		if store.Status != "active" {
-			return errors.New("cannot activate product: store inactive") // 403 forbidden
-		}
+	// Check store status
+	if store.Status != "active" {
+		return errors.New("cannot activate product: store inactive") // 403 forbidden
+	}
 
-		// Check category status
-		category, err := u.categoryRepo.GetByID(product.IDCategory)
-		if err != nil {
-			return errors.New("category not found")
-		}
-		if category.Status != "active" {
-			return errors.New("cannot activate product: category inactive") // 409 conflict
-		}
+	// Check category status
+	category, err := u.categoryRepo.GetByID(product.IDCategory)
+	if err != nil {
+		return errors.New("category not found")
+	}
+	if category.Status != "active" {
+		return errors.New("cannot activate product: category inactive") // 409 conflict
+	}
 
-		// Optional: Check stock (based on business requirement)
-		if product.Stok <= 0 {
-			return errors.New("cannot activate product: out of stock") // 409 conflict
-		}
-	} else if status == "inactive" {
-		// DEACTIVATE PRODUCT rules
-		if product.Status == "inactive" {
-			return errors.New("product already inactive") // 409 noop
-		}
-		// Deactivation is always allowed for sellers
+	// Check stock (optional reject based on business requirement)
+	if product.Stok <= 0 {
+		return errors.New("cannot activate product: out of stock") // 409 conflict
 	}
 
 	// Update status
-	product.Status = status
+	product.Status = "active"
 	if err := u.productRepo.Update(product); err != nil {
-		return errors.New("failed to update product status")
+		return errors.New("failed to activate product")
+	}
+
+	// Update category has_active_product flag
+	go func() {
+		u.categoryRepo.UpdateHasActiveProduct(product.IDCategory)
+	}()
+
+	return nil
+}
+
+// DeactivateProduct implements business rules for product deactivation
+func (u *ProductUsecase) DeactivateProduct(userID, productID uint64) error {
+	// Get user's store
+	store, err := u.storeRepo.GetByUserID(userID)
+	if err != nil {
+		return errors.New("store not found")
+	}
+
+	// Check ownership
+	err = u.productRepo.CheckOwnership(productID, store.ID)
+	if err != nil {
+		return err
+	}
+
+	// Get current product
+	product, err := u.productRepo.GetByIDForManagement(productID)
+	if err != nil {
+		return errors.New("product not found")
+	}
+
+	// Business rules from rancangan-update.txt
+	if product.Status == "inactive" {
+		return errors.New("product already inactive") // 409 noop
+	}
+
+	// Deactivation is always allowed for sellers
+	product.Status = "inactive"
+	if err := u.productRepo.Update(product); err != nil {
+		return errors.New("failed to deactivate product")
+	}
+
+	// Update category has_active_product flag
+	go func() {
+		u.categoryRepo.UpdateHasActiveProduct(product.IDCategory)
+	}()
+
+	return nil
+}
+
+// SuspendProduct allows admin to force deactivate any product
+func (u *ProductUsecase) SuspendProduct(productID uint64) error {
+	// Get product
+	product, err := u.productRepo.GetByIDForManagement(productID)
+	if err != nil {
+		return errors.New("product not found")
+	}
+
+	if product.Status == "suspended" {
+		return errors.New("product already suspended")
+	}
+
+	// Admin can force suspend
+	product.Status = "suspended"
+	if err := u.productRepo.Update(product); err != nil {
+		return errors.New("failed to suspend product")
+	}
+
+	// Update category has_active_product flag
+	go func() {
+		u.categoryRepo.UpdateHasActiveProduct(product.IDCategory)
+	}()
+
+	return nil
+}
+
+// UnsuspendProduct allows admin to reactivate suspended products
+func (u *ProductUsecase) UnsuspendProduct(productID uint64) error {
+	// Get product
+	product, err := u.productRepo.GetByIDForManagement(productID)
+	if err != nil {
+		return errors.New("product not found")
+	}
+
+	if product.Status != "suspended" {
+		return errors.New("product is not suspended")
+	}
+
+	// Reactivate to active status
+	product.Status = "active"
+	if err := u.productRepo.Update(product); err != nil {
+		return errors.New("failed to unsuspend product")
 	}
 
 	// Update category has_active_product flag
