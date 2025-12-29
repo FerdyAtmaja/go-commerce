@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"go-commerce/internal/domain"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -49,6 +50,30 @@ func (r *transactionRepository) GetByUserID(userID uint64, limit, offset int) ([
 
 func (r *transactionRepository) Update(tx *domain.Transaction) error {
 	return r.db.Save(tx).Error
+}
+
+func (r *transactionRepository) UpdateStatus(id uint64, status string) error {
+	updates := map[string]interface{}{"status_pembayaran": status}
+	if status == "paid" {
+		updates["paid_at"] = time.Now()
+	}
+	return r.db.Model(&domain.Transaction{}).Where("id = ?", id).Updates(updates).Error
+}
+
+func (r *transactionRepository) UpdatePaymentStatus(id uint64, paymentStatus string) error {
+	updates := map[string]interface{}{"payment_status": paymentStatus}
+	if paymentStatus == "paid" {
+		updates["paid_at"] = time.Now()
+	}
+	return r.db.Model(&domain.Transaction{}).Where("id = ?", id).Updates(updates).Error
+}
+
+func (r *transactionRepository) UpdateOrderStatus(id uint64, orderStatus string) error {
+	updates := map[string]interface{}{"order_status": orderStatus}
+	if orderStatus == "shipped" {
+		updates["shipped_at"] = time.Now()
+	}
+	return r.db.Model(&domain.Transaction{}).Where("id = ?", id).Updates(updates).Error
 }
 
 func (r *transactionRepository) BeginTx() (interface{}, error) {

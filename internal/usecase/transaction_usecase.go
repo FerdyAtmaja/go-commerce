@@ -14,6 +14,7 @@ type TransactionUsecase struct {
 	productRepo         domain.ProductRepository
 	addressRepo         domain.AddressRepository
 	userRepo            domain.UserRepository
+	storeRepo           domain.StoreRepository
 }
 
 func NewTransactionUsecase(
@@ -23,6 +24,7 @@ func NewTransactionUsecase(
 	productRepo domain.ProductRepository,
 	addressRepo domain.AddressRepository,
 	userRepo domain.UserRepository,
+	storeRepo domain.StoreRepository,
 ) *TransactionUsecase {
 	return &TransactionUsecase{
 		transactionRepo:     transactionRepo,
@@ -31,6 +33,7 @@ func NewTransactionUsecase(
 		productRepo:         productRepo,
 		addressRepo:         addressRepo,
 		userRepo:            userRepo,
+		storeRepo:           storeRepo,
 	}
 }
 
@@ -70,16 +73,29 @@ func (u *TransactionUsecase) CreateTransaction(userID uint64, req *domain.Create
 			return nil, errors.New("product not found or not available")
 		}
 
+		// Get store and validate status
+		store, err := u.storeRepo.GetByID(product.IDToko)
+		if err != nil {
+			u.transactionRepo.RollbackTx(dbTx)
+			return nil, errors.New("store not found")
+		}
+
+		// Check if store is active
+		if store.Status != "active" {
+			u.transactionRepo.RollbackTx(dbTx)
+			return nil, errors.New("STORE_NOT_AVAILABLE")
+		}
+
 		// Check if product is active
 		if product.Status != "active" {
 			u.transactionRepo.RollbackTx(dbTx)
-			return nil, errors.New("product is not available for purchase: " + product.NamaProduk)
+			return nil, errors.New("PRODUCT_NOT_AVAILABLE")
 		}
 
 		// Check stock availability
 		if product.Stok < itemReq.Quantity {
 			u.transactionRepo.RollbackTx(dbTx)
-			return nil, errors.New("insufficient stock for product: " + product.NamaProduk)
+			return nil, errors.New("INSUFFICIENT_STOCK")
 		}
 
 		// Create product log first
@@ -125,7 +141,9 @@ func (u *TransactionUsecase) CreateTransaction(userID uint64, req *domain.Create
 		HargaTotal:       totalAmount,
 		KodeInvoice:      invoiceCode,
 		MetodeBayar:      req.MetodeBayar,
-		Status:           "pending",
+		PaymentStatus:    "pending",
+		OrderStatus:      "created",
+		Status:           "pending", // Keep for backward compatibility
 	}
 
 	err = u.transactionRepo.CreateWithTx(dbTx, transaction)
@@ -183,4 +201,287 @@ func (u *TransactionUsecase) GetMyTransactions(userID uint64, page, limit int) (
 
 	offset := (page - 1) * limit
 	return u.transactionRepo.GetByUserID(userID, limit, offset)
+}
+
+func (u *TransactionUsecase) UpdatePaymentStatus(userID, transactionID uint64, status string) error {
+	// Validate status
+	validStatuses := []string{"pending", "paid", "cancelled", "shipped", "done"}
+	validStatus := false
+	for _, s := range validStatuses {
+		if s == status {
+			validStatus = true
+			break
+		}
+	}
+	if !validStatus {
+		return errors.New("invalid status")
+	}
+
+	// Check ownership
+	transaction, err := u.transactionRepo.GetByID(transactionID)
+	if err != nil {
+		return errors.New("transaction not found")
+	}
+	if transaction.UserID != userID {
+		return errors.New("access denied")
+	}
+
+	return u.transactionRepo.UpdateStatus(transactionID, status)
+}
+
+// OnPaymentPaid - Payment callback when payment is successful
+func (u *TransactionUsecase) OnPaymentPaid(transactionID uint64) error {
+	transaction, err := u.transactionRepo.GetByID(transactionID)
+	if err != nil {
+		return err
+	}
+
+	// Idempotent check
+	if transaction.PaymentStatus != "pending" {
+		return nil // Already processed
+	}
+
+	// Begin database transaction
+	dbTx, err := u.transactionRepo.BeginTx()
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			u.transactionRepo.RollbackTx(dbTx)
+			panic(r)
+		}
+	}()
+
+	// Update payment status
+	err = u.transactionRepo.UpdatePaymentStatus(transactionID, "paid")
+	if err != nil {
+		u.transactionRepo.RollbackTx(dbTx)
+		return err
+	}
+
+	// Reduce stock and update sold count for each item
+	for _, item := range transaction.TransactionItems {
+		// Get product ID from product log
+		productLogs, err := u.productLogRepo.GetByProductID(item.ProductLogID)
+		if err != nil || len(productLogs) == 0 {
+			u.transactionRepo.RollbackTx(dbTx)
+			return errors.New("product log not found")
+		}
+
+		productID := productLogs[0].ProductID
+
+		// Update stock
+		err = u.productRepo.UpdateStockWithTx(dbTx, productID, item.Quantity)
+		if err != nil {
+			u.transactionRepo.RollbackTx(dbTx)
+			return err
+		}
+
+		// Update sold count
+		err = u.productRepo.UpdateSoldCountWithTx(dbTx, productID, item.Quantity)
+		if err != nil {
+			u.transactionRepo.RollbackTx(dbTx)
+			return err
+		}
+	}
+
+	return u.transactionRepo.CommitTx(dbTx)
+}
+
+// OnPaymentFailed - Payment callback when payment fails
+func (u *TransactionUsecase) OnPaymentFailed(transactionID uint64) error {
+	transaction, err := u.transactionRepo.GetByID(transactionID)
+	if err != nil {
+		return err
+	}
+
+	// Idempotent check
+	if transaction.PaymentStatus != "pending" {
+		return nil
+	}
+
+	// Update status
+	err = u.transactionRepo.UpdatePaymentStatus(transactionID, "failed")
+	if err != nil {
+		return err
+	}
+
+	return u.transactionRepo.UpdateOrderStatus(transactionID, "cancelled")
+}
+
+// ProcessOrder - Seller processes order
+func (u *TransactionUsecase) ProcessOrder(sellerID, transactionID uint64) error {
+	transaction, err := u.transactionRepo.GetByID(transactionID)
+	if err != nil {
+		return errors.New("transaction not found")
+	}
+
+	// Validate seller owns store in transaction
+	for _, item := range transaction.TransactionItems {
+		store, err := u.storeRepo.GetByID(item.StoreID)
+		if err != nil || store.UserID != sellerID {
+			return errors.New("forbidden: seller does not own store")
+		}
+	}
+
+	// Validate payment status
+	if transaction.PaymentStatus != "paid" {
+		return errors.New("payment not completed")
+	}
+
+	// Validate order status
+	if transaction.OrderStatus != "created" {
+		return errors.New("invalid state")
+	}
+
+	return u.transactionRepo.UpdateOrderStatus(transactionID, "processed")
+}
+
+// ShipOrder - Seller ships order
+func (u *TransactionUsecase) ShipOrder(sellerID, transactionID uint64) error {
+	transaction, err := u.transactionRepo.GetByID(transactionID)
+	if err != nil {
+		return errors.New("transaction not found")
+	}
+
+	// Validate seller owns store
+	for _, item := range transaction.TransactionItems {
+		store, err := u.storeRepo.GetByID(item.StoreID)
+		if err != nil || store.UserID != sellerID {
+			return errors.New("forbidden")
+		}
+	}
+
+	// Validate order status
+	if transaction.OrderStatus != "processed" {
+		return errors.New("order not ready")
+	}
+
+	return u.transactionRepo.UpdateOrderStatus(transactionID, "shipped")
+}
+
+// ConfirmDelivered - Buyer confirms delivery
+func (u *TransactionUsecase) ConfirmDelivered(userID, transactionID uint64) error {
+	transaction, err := u.transactionRepo.GetByID(transactionID)
+	if err != nil {
+		return errors.New("transaction not found")
+	}
+
+	// Check ownership
+	if transaction.UserID != userID {
+		return errors.New("forbidden")
+	}
+
+	// Validate order status
+	if transaction.OrderStatus != "shipped" {
+		return errors.New("order not shipped")
+	}
+
+	return u.transactionRepo.UpdateOrderStatus(transactionID, "delivered")
+}
+
+// CancelTransaction - Buyer cancels transaction
+func (u *TransactionUsecase) CancelTransaction(userID, transactionID uint64) error {
+	transaction, err := u.transactionRepo.GetByID(transactionID)
+	if err != nil {
+		return errors.New("transaction not found")
+	}
+
+	// Check ownership
+	if transaction.UserID != userID {
+		return errors.New("forbidden")
+	}
+
+	// Check if paid - should use refund instead
+	if transaction.PaymentStatus == "paid" {
+		return errors.New("use refund for paid transactions")
+	}
+
+	// Can only cancel created orders
+	if transaction.OrderStatus != "created" {
+		return errors.New("cannot cancel")
+	}
+
+	// Update transaction status
+	err = u.transactionRepo.UpdateOrderStatus(transactionID, "cancelled")
+	if err != nil {
+		return err
+	}
+
+	// Expire any active payment intents for this transaction
+	// This prevents payment success after cancellation
+	// Note: This would require payment intent usecase injection
+	// For now, we'll handle this at the application layer
+
+	return nil
+}
+
+// RefundTransaction - Admin/System refunds transaction
+func (u *TransactionUsecase) RefundTransaction(transactionID uint64) error {
+	transaction, err := u.transactionRepo.GetByID(transactionID)
+	if err != nil {
+		return errors.New("transaction not found")
+	}
+
+	// Can only refund paid transactions
+	if transaction.PaymentStatus != "paid" {
+		return errors.New("NOT_REFUNDABLE")
+	}
+
+	// Begin database transaction
+	dbTx, err := u.transactionRepo.BeginTx()
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			u.transactionRepo.RollbackTx(dbTx)
+			panic(r)
+		}
+	}()
+
+	// Update payment status to refunded
+	err = u.transactionRepo.UpdatePaymentStatus(transactionID, "refunded")
+	if err != nil {
+		u.transactionRepo.RollbackTx(dbTx)
+		return err
+	}
+
+	// Update order status to cancelled
+	err = u.transactionRepo.UpdateOrderStatus(transactionID, "cancelled")
+	if err != nil {
+		u.transactionRepo.RollbackTx(dbTx)
+		return err
+	}
+
+	// Restore stock and reduce sold count for each item
+	for _, item := range transaction.TransactionItems {
+		// Get product ID from product log
+		productLogs, err := u.productLogRepo.GetByProductID(item.ProductLogID)
+		if err != nil || len(productLogs) == 0 {
+			u.transactionRepo.RollbackTx(dbTx)
+			return errors.New("product log not found")
+		}
+
+		productID := productLogs[0].ProductID
+
+		// Restore stock (add back)
+		err = u.productRepo.UpdateStockWithTx(dbTx, productID, -item.Quantity)
+		if err != nil {
+			u.transactionRepo.RollbackTx(dbTx)
+			return err
+		}
+
+		// Reduce sold count
+		err = u.productRepo.UpdateSoldCountWithTx(dbTx, productID, -item.Quantity)
+		if err != nil {
+			u.transactionRepo.RollbackTx(dbTx)
+			return err
+		}
+	}
+
+	return u.transactionRepo.CommitTx(dbTx)
 }

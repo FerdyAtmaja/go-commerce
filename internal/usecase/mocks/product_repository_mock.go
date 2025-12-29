@@ -109,3 +109,13 @@ func (m *ProductRepositoryMock) GetByIDForManagement(id uint64) (*domain.Product
 	}
 	return args.Get(0).(*domain.Product), args.Error(1)
 }
+
+func (m *ProductRepositoryMock) UpdateStockWithTx(dbTx interface{}, productID uint64, quantity int) error {
+	args := m.Called(dbTx, productID, quantity)
+	return args.Error(0)
+}
+
+func (m *ProductRepositoryMock) UpdateSoldCountWithTx(dbTx interface{}, productID uint64, quantity int) error {
+	args := m.Called(dbTx, productID, quantity)
+	return args.Error(0)
+}

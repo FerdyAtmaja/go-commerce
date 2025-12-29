@@ -18,6 +18,7 @@ func TestTransactionUsecase_GetTransactionByID_Success(t *testing.T) {
 	mockProductRepo := new(mocks.ProductRepositoryMock)
 	mockAddressRepo := new(mocks.MockAddressRepository)
 	mockUserRepo := new(mocks.MockUserRepository)
+	mockStoreRepo := new(mocks.StoreRepositoryMock)
 
 	transactionUsecase := NewTransactionUsecase(
 		mockTransactionRepo,
@@ -26,6 +27,7 @@ func TestTransactionUsecase_GetTransactionByID_Success(t *testing.T) {
 		mockProductRepo,
 		mockAddressRepo,
 		mockUserRepo,
+		mockStoreRepo,
 	)
 
 	userID := uint64(1)
@@ -60,6 +62,7 @@ func TestTransactionUsecase_GetTransactionByID_AccessDenied(t *testing.T) {
 	mockProductRepo := new(mocks.ProductRepositoryMock)
 	mockAddressRepo := new(mocks.MockAddressRepository)
 	mockUserRepo := new(mocks.MockUserRepository)
+	mockStoreRepo := new(mocks.StoreRepositoryMock)
 
 	transactionUsecase := NewTransactionUsecase(
 		mockTransactionRepo,
@@ -68,6 +71,7 @@ func TestTransactionUsecase_GetTransactionByID_AccessDenied(t *testing.T) {
 		mockProductRepo,
 		mockAddressRepo,
 		mockUserRepo,
+		mockStoreRepo,
 	)
 
 	userID := uint64(1)
@@ -101,6 +105,7 @@ func TestTransactionUsecase_GetMyTransactions_Success(t *testing.T) {
 	mockProductRepo := new(mocks.ProductRepositoryMock)
 	mockAddressRepo := new(mocks.MockAddressRepository)
 	mockUserRepo := new(mocks.MockUserRepository)
+	mockStoreRepo := new(mocks.StoreRepositoryMock)
 
 	transactionUsecase := NewTransactionUsecase(
 		mockTransactionRepo,
@@ -109,6 +114,7 @@ func TestTransactionUsecase_GetMyTransactions_Success(t *testing.T) {
 		mockProductRepo,
 		mockAddressRepo,
 		mockUserRepo,
+		mockStoreRepo,
 	)
 
 	userID := uint64(1)
@@ -145,6 +151,7 @@ func TestTransactionUsecase_CreateTransaction_Success(t *testing.T) {
 	mockProductRepo := new(mocks.ProductRepositoryMock)
 	mockAddressRepo := new(mocks.MockAddressRepository)
 	mockUserRepo := new(mocks.MockUserRepository)
+	mockStoreRepo := new(mocks.StoreRepositoryMock)
 
 	transactionUsecase := NewTransactionUsecase(
 		mockTransactionRepo,
@@ -153,6 +160,7 @@ func TestTransactionUsecase_CreateTransaction_Success(t *testing.T) {
 		mockProductRepo,
 		mockAddressRepo,
 		mockUserRepo,
+		mockStoreRepo,
 	)
 
 	userID := uint64(1)
@@ -179,6 +187,12 @@ func TestTransactionUsecase_CreateTransaction_Success(t *testing.T) {
 		Status:         "active",
 	}
 
+	store := &domain.Store{
+		ID:     1,
+		UserID: 2,
+		Status: "active",
+	}
+
 	mockTx := "mock_transaction"
 
 	// Mock expectations - Atomic operations
@@ -187,6 +201,7 @@ func TestTransactionUsecase_CreateTransaction_Success(t *testing.T) {
 	mockTransactionRepo.On("BeginTx").Return(mockTx, nil)
 	mockTransactionRepo.On("RollbackTx", mockTx).Return(nil).Maybe() // Add this for defer
 	mockProductRepo.On("GetByID", productID).Return(product, nil)
+	mockStoreRepo.On("GetByID", uint64(1)).Return(store, nil)
 	mockProductLogRepo.On("Create", mock.AnythingOfType("*domain.ProductLog")).Return(nil)
 	mockTransactionRepo.On("CreateWithTx", mockTx, mock.AnythingOfType("*domain.Transaction")).Return(nil)
 	mockTransactionItemRepo.On("CreateWithTx", mockTx, mock.AnythingOfType("*domain.TransactionItem")).Return(nil)
@@ -201,7 +216,8 @@ func TestTransactionUsecase_CreateTransaction_Success(t *testing.T) {
 	assert.Equal(t, userID, result.UserID)
 	assert.Equal(t, addressID, result.AlamatPengiriman)
 	assert.Equal(t, "transfer", result.MetodeBayar)
-	assert.Equal(t, "pending", result.Status)
+	assert.Equal(t, "pending", result.PaymentStatus)
+	assert.Equal(t, "created", result.OrderStatus)
 	assert.Equal(t, 20000.0, result.HargaTotal) // 2 * 10000
 
 	// Verify all mocks called

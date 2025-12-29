@@ -62,6 +62,8 @@ type ProductRepository interface {
 	GetAllWithFilter(filter *ProductFilter) ([]*Product, int64, error)
 	GetByStatus(status string, limit, offset int) ([]*Product, int64, error)
 	Update(product *Product) error
+	UpdateStockWithTx(dbTx interface{}, productID uint64, quantity int) error
+	UpdateSoldCountWithTx(dbTx interface{}, productID uint64, quantity int) error
 	Delete(id uint64) error
 	CheckOwnership(productID, tokoID uint64) error
 }

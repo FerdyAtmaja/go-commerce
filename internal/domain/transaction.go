@@ -11,8 +11,11 @@ type Transaction struct {
 	HargaTotal        float64    `json:"harga_total" gorm:"column:harga_total;type:decimal(14,2);not null"`
 	KodeInvoice       string     `json:"kode_invoice" gorm:"column:kode_invoice;type:varchar(255);unique;not null;index:idx_trx_invoice"`
 	MetodeBayar       string     `json:"metode_bayar" gorm:"column:metode_bayar;type:enum('transfer','cod','ewallet','credit_card')" validate:"omitempty,oneof=transfer cod ewallet credit_card"`
+	PaymentStatus     string     `json:"payment_status" gorm:"column:payment_status;type:enum('pending','paid','failed','refunded');default:pending;index:idx_trx_payment_status" validate:"omitempty,oneof=pending paid failed refunded"`
+	OrderStatus       string     `json:"order_status" gorm:"column:order_status;type:enum('created','processed','shipped','delivered','cancelled');default:created;index:idx_trx_order_status" validate:"omitempty,oneof=created processed shipped delivered cancelled"`
 	Status            string     `json:"status_pembayaran" gorm:"column:status_pembayaran;type:enum('pending','paid','cancelled','shipped','done');default:pending;index:idx_trx_status_pembayaran" validate:"omitempty,oneof=pending paid cancelled shipped done"`
 	PaidAt            *time.Time `json:"paid_at" gorm:"column:paid_at;type:timestamp"`
+	ShippedAt         *time.Time `json:"shipped_at" gorm:"column:shipped_at;type:timestamp"`
 	CreatedAt         time.Time  `json:"created_at" gorm:"column:created_at;type:timestamp;default:CURRENT_TIMESTAMP;index:idx_trx_created"`
 	UpdatedAt         time.Time  `json:"updated_at" gorm:"column:updated_at;type:timestamp;default:CURRENT_TIMESTAMP"`
 
@@ -85,6 +88,9 @@ type TransactionRepository interface {
 	GetByUserID(userID uint64, limit, offset int) ([]*Transaction, int64, error)
 	GetByStatus(status string, limit, offset int) ([]*Transaction, int64, error)
 	Update(tx *Transaction) error
+	UpdateStatus(id uint64, status string) error
+	UpdatePaymentStatus(id uint64, paymentStatus string) error
+	UpdateOrderStatus(id uint64, orderStatus string) error
 	BeginTx() (interface{}, error)
 	CommitTx(tx interface{}) error
 	RollbackTx(tx interface{}) error

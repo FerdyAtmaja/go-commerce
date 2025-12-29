@@ -171,6 +171,16 @@ func (r *productRepository) Update(product *domain.Product) error {
 	return r.db.Save(product).Error
 }
 
+func (r *productRepository) UpdateStockWithTx(dbTx interface{}, productID uint64, quantity int) error {
+	gormTx := dbTx.(*gorm.DB)
+	return gormTx.Model(&domain.Product{}).Where("id = ?", productID).Update("stok", gorm.Expr("stok - ?", quantity)).Error
+}
+
+func (r *productRepository) UpdateSoldCountWithTx(dbTx interface{}, productID uint64, quantity int) error {
+	gormTx := dbTx.(*gorm.DB)
+	return gormTx.Model(&domain.Product{}).Where("id = ?", productID).Update("sold_count", gorm.Expr("sold_count + ?", quantity)).Error
+}
+
 func (r *productRepository) Delete(id uint64) error {
 	return r.db.Delete(&domain.Product{}, id).Error
 }

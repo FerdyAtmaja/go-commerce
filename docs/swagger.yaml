@@ -229,6 +229,37 @@ definitions:
     - email
     - password
     type: object
+  domain.PaymentIntent:
+    properties:
+      created_at:
+        type: string
+      expired_at:
+        type: string
+      id:
+        type: integer
+      method:
+        type: string
+      status:
+        $ref: '#/definitions/domain.PaymentIntentStatus'
+      transaction:
+        allOf:
+        - $ref: '#/definitions/domain.Transaction'
+        description: Relations
+      trx_id:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  domain.PaymentIntentStatus:
+    enum:
+    - pending
+    - success
+    - failed
+    type: string
+    x-enum-varnames:
+    - PaymentIntentStatusPending
+    - PaymentIntentStatusSuccess
+    - PaymentIntentStatusFailed
   domain.PhotoProduk:
     properties:
       created_at:
@@ -412,7 +443,24 @@ definitions:
         - ewallet
         - credit_card
         type: string
+      order_status:
+        enum:
+        - created
+        - processed
+        - shipped
+        - delivered
+        - cancelled
+        type: string
       paid_at:
+        type: string
+      payment_status:
+        enum:
+        - pending
+        - paid
+        - failed
+        - refunded
+        type: string
+      shipped_at:
         type: string
       status_pembayaran:
         enum:
@@ -614,6 +662,31 @@ definitions:
     - email
     - name
     - phone
+    type: object
+  http.CreatePaymentIntentRequest:
+    properties:
+      method:
+        enum:
+        - bank_transfer
+        - credit_card
+        - e_wallet
+        type: string
+    required:
+    - method
+    type: object
+  http.PaymentCallbackRequest:
+    properties:
+      gateway_ref:
+        type: string
+      paid_at:
+        type: string
+      status:
+        enum:
+        - success
+        - failed
+        type: string
+    required:
+    - status
     type: object
   response.PaginatedResponse:
     properties:
@@ -926,6 +999,68 @@ paths:
       summary: Get default address (Authenticated User)
       tags:
       - Addresses
+  /admin/payments/{intentId}/simulate-failed:
+    put:
+      consumes:
+      - application/json
+      description: Simulate payment failed callback - Admin only endpoint
+      parameters:
+      - description: Payment Intent ID
+        in: path
+        name: intentId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Simulate Payment Failed (Admin Only)
+      tags:
+      - Payment Simulation (Admin)
+  /admin/payments/{intentId}/simulate-success:
+    put:
+      consumes:
+      - application/json
+      description: Simulate payment success callback - Admin only endpoint
+      parameters:
+      - description: Payment Intent ID
+        in: path
+        name: intentId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Simulate Payment Success (Admin Only)
+      tags:
+      - Payment Simulation (Admin)
   /admin/products/{id}/suspend:
     put:
       consumes:
@@ -1224,6 +1359,41 @@ paths:
       summary: Get pending stores (Admin only)
       tags:
       - Stores
+  /admin/transactions/{id}/refund:
+    put:
+      consumes:
+      - application/json
+      description: Admin refunds paid transaction. Admin access required.
+      parameters:
+      - description: Transaction ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Transaction refunded successfully
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Refund transaction (Admin)
+      tags:
+      - Transactions - Admin Operations
   /auth/login:
     post:
       consumes:
@@ -1309,6 +1479,88 @@ paths:
       summary: Register a new user (Public)
       tags:
       - Authentication
+  /callbacks/payment/{id}/failed:
+    post:
+      consumes:
+      - application/json
+      description: Payment gateway callback when payment fails. System use only.
+      parameters:
+      - description: Transaction ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Payment failure processed successfully
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Payment callback - failed (System)
+      tags:
+      - Transactions - Payment Callbacks
+  /callbacks/payment/{id}/paid:
+    post:
+      consumes:
+      - application/json
+      description: Payment gateway callback when payment is successful. System use
+        only.
+      parameters:
+      - description: Transaction ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Payment processed successfully
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Payment callback - paid (System)
+      tags:
+      - Transactions - Payment Callbacks
+  /callbacks/payments/{intentId}:
+    post:
+      consumes:
+      - application/json
+      description: Receive payment status from payment gateway - updates payment intent
+      parameters:
+      - description: Payment Intent ID
+        in: path
+        name: intentId
+        required: true
+        type: integer
+      - description: Payment status from gateway
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/http.PaymentCallbackRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Payment Gateway Callback
+      tags:
+      - Payment Gateway Callback
   /categories:
     get:
       consumes:
@@ -2302,6 +2554,76 @@ paths:
       summary: Get cities by province (Public)
       tags:
       - Regions
+  /seller/transactions/{id}/process:
+    put:
+      consumes:
+      - application/json
+      description: Seller processes order after payment is confirmed. Requires authentication.
+      parameters:
+      - description: Transaction ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Order processed successfully
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Process order (Seller)
+      tags:
+      - Transactions - Seller Operations
+  /seller/transactions/{id}/ship:
+    put:
+      consumes:
+      - application/json
+      description: Seller ships processed order. Requires authentication.
+      parameters:
+      - description: Transaction ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Order shipped successfully
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Ship order (Seller)
+      tags:
+      - Transactions - Seller Operations
   /stores:
     get:
       consumes:
@@ -2626,6 +2948,118 @@ paths:
       summary: Get transaction by ID (Authenticated User)
       tags:
       - Transactions
+  /transactions/{id}/cancel:
+    put:
+      consumes:
+      - application/json
+      description: Buyer cancels unpaid transaction. Requires authentication.
+      parameters:
+      - description: Transaction ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Transaction cancelled successfully
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Cancel transaction (Buyer)
+      tags:
+      - Transactions - Buyer Operations
+  /transactions/{id}/confirm-delivery:
+    put:
+      consumes:
+      - application/json
+      description: Buyer confirms order has been delivered. Requires authentication.
+      parameters:
+      - description: Transaction ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Delivery confirmed successfully
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Confirm delivery (Buyer)
+      tags:
+      - Transactions - Buyer Operations
+  /transactions/{id}/pay:
+    post:
+      consumes:
+      - application/json
+      description: Create payment intent for transaction
+      parameters:
+      - description: Transaction ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Payment method
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/http.CreatePaymentIntentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.PaymentIntent'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Create Payment Intent
+      tags:
+      - Payment Intent
   /transactions/my:
     get:
       consumes:

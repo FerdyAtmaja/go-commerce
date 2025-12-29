@@ -71,3 +71,18 @@ func (m *MockTransactionRepository) GetByStatus(status string, limit, offset int
 	}
 	return args.Get(0).([]*domain.Transaction), args.Get(1).(int64), args.Error(2)
 }
+
+func (m *MockTransactionRepository) UpdateStatus(id uint64, status string) error {
+	args := m.Called(id, status)
+	return args.Error(0)
+}
+
+func (m *MockTransactionRepository) UpdatePaymentStatus(id uint64, paymentStatus string) error {
+	args := m.Called(id, paymentStatus)
+	return args.Error(0)
+}
+
+func (m *MockTransactionRepository) UpdateOrderStatus(id uint64, orderStatus string) error {
+	args := m.Called(id, orderStatus)
+	return args.Error(0)
+}

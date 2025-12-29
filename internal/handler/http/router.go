@@ -1,6 +1,7 @@
 package http
 
 import (
+	"go-commerce/internal/domain"
 	"go-commerce/internal/handler/middleware"
 	"go-commerce/internal/usecase"
 	"go-commerce/pkg/jwt"
@@ -156,15 +157,50 @@ func (r *Router) SetupProductRoutes(productUsecase *usecase.ProductUsecase) {
 	admin.Put("/products/:id/unsuspend", adminMiddleware, requireAdmin, productHandler.UnsuspendProduct)
 }
 
-func (r *Router) SetupTransactionRoutes(transactionUsecase *usecase.TransactionUsecase) {
-	transactionHandler := NewTransactionHandler(transactionUsecase)
+func (r *Router) SetupTransactionRoutes(transactionUsecase *usecase.TransactionUsecase, paymentIntentUsecase domain.PaymentIntentUsecase) {
+	transactionHandler := NewTransactionHandler(transactionUsecase, paymentIntentUsecase)
 	
 	api := r.app.Group("/api/v1")
 	transactions := api.Group("/transactions")
 
-	// Protected routes
+	// Protected routes - Buyer operations
 	jwtMiddleware := middleware.JWTMiddleware(r.jwtManager)
 	transactions.Post("/", jwtMiddleware, transactionHandler.CreateTransaction)
 	transactions.Get("/my", jwtMiddleware, transactionHandler.GetMyTransactions)
 	transactions.Get("/:id", jwtMiddleware, transactionHandler.GetTransactionByID)
+	transactions.Put("/:id/confirm-delivery", jwtMiddleware, transactionHandler.ConfirmDelivered)
+	transactions.Put("/:id/cancel", jwtMiddleware, transactionHandler.CancelTransaction)
+
+	// Seller operations
+	seller := api.Group("/seller")
+	seller.Put("/transactions/:id/process", jwtMiddleware, transactionHandler.ProcessOrder)
+	seller.Put("/transactions/:id/ship", jwtMiddleware, transactionHandler.ShipOrder)
+
+	// Admin operations
+	admin := api.Group("/admin")
+	adminMiddleware := middleware.JWTMiddleware(r.jwtManager)
+	requireAdmin := middleware.RequireAdmin()
+	admin.Put("/transactions/:id/refund", adminMiddleware, requireAdmin, transactionHandler.RefundTransaction)
+}
+
+func (r *Router) SetupPaymentIntentRoutes(paymentIntentUsecase domain.PaymentIntentUsecase) {
+	paymentIntentHandler := NewPaymentIntentHandler(paymentIntentUsecase)
+	
+	api := r.app.Group("/api/v1")
+	transactions := api.Group("/transactions")
+
+	// Payment intent creation (buyer)
+	jwtMiddleware := middleware.JWTMiddleware(r.jwtManager)
+	transactions.Post("/:id/pay", jwtMiddleware, paymentIntentHandler.CreatePaymentIntent)
+
+	// Admin payment simulation endpoints
+	admin := api.Group("/admin")
+	adminMiddleware := middleware.JWTMiddleware(r.jwtManager)
+	requireAdmin := middleware.RequireAdmin()
+	admin.Put("/payments/:intentId/simulate-success", adminMiddleware, requireAdmin, paymentIntentHandler.SimulatePaymentSuccess)
+	admin.Put("/payments/:intentId/simulate-failed", adminMiddleware, requireAdmin, paymentIntentHandler.SimulatePaymentFailed)
+
+	// Payment gateway callback (updates payment intent)
+	callbacks := api.Group("/callbacks")
+	callbacks.Post("/payments/:intentId", paymentIntentHandler.OnPaymentCallback)
 }

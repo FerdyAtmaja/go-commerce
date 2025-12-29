@@ -25,6 +25,6 @@ func (r *transactionItemRepository) CreateWithTx(dbTx interface{}, item *domain.
 
 func (r *transactionItemRepository) GetByTransactionID(transactionID uint64) ([]*domain.TransactionItem, error) {
 	var items []*domain.TransactionItem
-	err := r.db.Where("id_transaksi = ?", transactionID).Find(&items).Error
+	err := r.db.Where("id_trx = ?", transactionID).Find(&items).Error
 	return items, err
 }

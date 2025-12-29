@@ -67,6 +67,7 @@ func main() {
 	transactionRepo := mysql.NewTransactionRepository(db)
 	transactionItemRepo := mysql.NewTransactionItemRepository(db)
 	productLogRepo := mysql.NewProductLogRepository(db)
+	paymentIntentRepo := mysql.NewPaymentIntentRepository(db)
 
 	// Initialize services
 	regionService := service.NewIndonesiaRegionService()
@@ -82,7 +83,8 @@ func main() {
 	categoryUsecase := usecase.NewCategoryUsecase(categoryRepo)
 	addressUsecase := usecase.NewAddressUsecase(addressRepo, regionService)
 	productUsecase := usecase.NewProductUsecase(productRepo, photoRepo, storeRepo, categoryRepo)
-	transactionUsecase := usecase.NewTransactionUsecase(transactionRepo, transactionItemRepo, productLogRepo, productRepo, addressRepo, userRepo)
+	transactionUsecase := usecase.NewTransactionUsecase(transactionRepo, transactionItemRepo, productLogRepo, productRepo, addressRepo, userRepo, storeRepo)
+	paymentIntentUsecase := usecase.NewPaymentIntentUsecase(paymentIntentRepo, transactionRepo, transactionUsecase)
 
 	// Initialize Fiber app
 	app := fiber.New(fiber.Config{
@@ -121,7 +123,8 @@ func main() {
 	router.SetupCategoryRoutes(categoryUsecase)
 	router.SetupAddressRoutes(addressUsecase)
 	router.SetupProductRoutes(productUsecase)
-	router.SetupTransactionRoutes(transactionUsecase)
+	router.SetupTransactionRoutes(transactionUsecase, paymentIntentUsecase)
+	router.SetupPaymentIntentRoutes(paymentIntentUsecase)
 
 	// Swagger documentation
 	app.Get("/swagger/*", fiberSwagger.WrapHandler)
