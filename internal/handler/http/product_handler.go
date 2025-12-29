@@ -31,8 +31,8 @@ func NewProductHandler(productUsecase *usecase.ProductUsecase) *ProductHandler {
 }
 
 // CreateProduct godoc
-// @Summary Create a new product
-// @Description Create a new product for the authenticated user's store
+// @Summary Create a new product (Seller only)
+// @Description Create a new product for the authenticated user's store. Only store owners can create products.
 // @Tags Products
 // @Accept json
 // @Produce json
@@ -41,6 +41,7 @@ func NewProductHandler(productUsecase *usecase.ProductUsecase) *ProductHandler {
 // @Success 201 {object} response.Response{data=domain.Product} "Product created successfully"
 // @Failure 400 {object} response.Response "Bad request"
 // @Failure 401 {object} response.Response "Unauthorized"
+// @Failure 403 {object} response.Response "Forbidden - store owner only"
 // @Router /products [post]
 func (h *ProductHandler) CreateProduct(c *fiber.Ctx) error {
 	var req domain.CreateProductRequest
@@ -62,8 +63,8 @@ func (h *ProductHandler) CreateProduct(c *fiber.Ctx) error {
 }
 
 // GetMyProducts godoc
-// @Summary Get current user's products
-// @Description Get all products owned by the authenticated user with pagination and search
+// @Summary Get current user's products (Seller only)
+// @Description Get all products owned by the authenticated user with pagination and search. Only store owners can access their products.
 // @Tags Products
 // @Accept json
 // @Produce json
@@ -73,6 +74,7 @@ func (h *ProductHandler) CreateProduct(c *fiber.Ctx) error {
 // @Param search query string false "Search by product name"
 // @Success 200 {object} response.PaginatedResponse{data=[]domain.Product} "Products retrieved successfully"
 // @Failure 401 {object} response.Response "Unauthorized"
+// @Failure 403 {object} response.Response "Forbidden - store owner only"
 // @Failure 500 {object} response.Response "Internal server error"
 // @Router /products/my [get]
 func (h *ProductHandler) GetMyProducts(c *fiber.Ctx) error {
@@ -95,8 +97,8 @@ func (h *ProductHandler) GetMyProducts(c *fiber.Ctx) error {
 }
 
 // GetAllProducts godoc
-// @Summary Get all products
-// @Description Get all products with pagination and filtering (public endpoint)
+// @Summary Get all products (Public)
+// @Description Get all products with pagination and filtering. This is a public endpoint accessible to everyone.
 // @Tags Products
 // @Accept json
 // @Produce json
@@ -138,8 +140,8 @@ func (h *ProductHandler) GetAllProducts(c *fiber.Ctx) error {
 }
 
 // GetProductByID godoc
-// @Summary Get product by ID
-// @Description Get a single product by its ID (public endpoint)
+// @Summary Get product by ID (Public)
+// @Description Get a single product by its ID. This is a public endpoint accessible to everyone.
 // @Tags Products
 // @Accept json
 // @Produce json
@@ -163,8 +165,8 @@ func (h *ProductHandler) GetProductByID(c *fiber.Ctx) error {
 }
 
 // GetProductBySlug godoc
-// @Summary Get product by slug
-// @Description Get a single product by its exact slug (public endpoint)
+// @Summary Get product by slug (Public)
+// @Description Get a single product by its exact slug. This is a public endpoint accessible to everyone.
 // @Tags Products
 // @Accept json
 // @Produce json
@@ -188,8 +190,8 @@ func (h *ProductHandler) GetProductBySlug(c *fiber.Ctx) error {
 }
 
 // SearchProductsBySlug godoc
-// @Summary Search products by slug pattern
-// @Description Search products by partial slug match with pagination
+// @Summary Search products by slug pattern (Public)
+// @Description Search products by partial slug match with pagination. This is a public endpoint accessible to everyone.
 // @Tags Products
 // @Accept json
 // @Produce json
@@ -222,8 +224,8 @@ func (h *ProductHandler) SearchProductsBySlug(c *fiber.Ctx) error {
 }
 
 // UpdateProduct godoc
-// @Summary Update a product
-// @Description Update an existing product (owner only)
+// @Summary Update a product (Seller only)
+// @Description Update an existing product. Only the product owner can update their products.
 // @Tags Products
 // @Accept json
 // @Produce json
@@ -260,8 +262,8 @@ func (h *ProductHandler) UpdateProduct(c *fiber.Ctx) error {
 }
 
 // DeleteProduct godoc
-// @Summary Delete a product
-// @Description Delete an existing product (owner only)
+// @Summary Delete a product (Seller only)
+// @Description Delete an existing product. Only the product owner can delete their products.
 // @Tags Products
 // @Accept json
 // @Produce json
@@ -288,8 +290,8 @@ func (h *ProductHandler) DeleteProduct(c *fiber.Ctx) error {
 }
 
 // UploadProductPhoto godoc
-// @Summary Upload product photo
-// @Description Upload a photo for a product (owner only)
+// @Summary Upload product photo (Seller only)
+// @Description Upload a photo for a product. Only the product owner can upload photos.
 // @Tags Products
 // @Accept multipart/form-data
 // @Produce json
@@ -364,8 +366,8 @@ func (h *ProductHandler) UploadProductPhoto(c *fiber.Ctx) error {
 }
 
 // SetPrimaryPhoto godoc
-// @Summary Set primary photo
-// @Description Set a photo as the primary photo for a product (owner only)
+// @Summary Set primary photo (Seller only)
+// @Description Set a photo as the primary photo for a product. Only the product owner can manage photos.
 // @Tags Products
 // @Accept json
 // @Produce json
@@ -398,8 +400,8 @@ func (h *ProductHandler) SetPrimaryPhoto(c *fiber.Ctx) error {
 }
 
 // DeleteProductPhoto godoc
-// @Summary Delete product photo
-// @Description Delete a photo from a product (owner only)
+// @Summary Delete product photo (Seller only)
+// @Description Delete a photo from a product. Only the product owner can manage photos.
 // @Tags Products
 // @Accept json
 // @Produce json
@@ -497,4 +499,53 @@ func generateFileName(originalName string) string {
 	timestamp := time.Now().Unix()
 	
 	return fmt.Sprintf("%s_%d_%s%s", name, timestamp, uuid[:8], ext)
+}
+// UpdateProductStatus godoc
+// @Summary Update product status (Seller only)
+// @Description Update product status (active/inactive). Only the product owner can change status. Business rules: store and category must be active to activate product.
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "Product ID"
+// @Param request body map[string]string true "Status update request" example({"status":"active"})
+// @Success 200 {object} response.Response "Product status updated successfully"
+// @Failure 400 {object} response.Response "Bad request"
+// @Failure 401 {object} response.Response "Unauthorized"
+// @Failure 403 {object} response.Response "Forbidden - not product owner or store inactive"
+// @Failure 409 {object} response.Response "Conflict - business rule violation (category inactive, out of stock, etc.)"
+// @Router /products/{id}/status [put]
+func (h *ProductHandler) UpdateProductStatus(c *fiber.Ctx) error {
+	id, err := strconv.ParseUint(c.Params("id"), 10, 64)
+	if err != nil {
+		return response.BadRequest(c, "Invalid product ID")
+	}
+
+	var req map[string]string
+	if err := c.BodyParser(&req); err != nil {
+		return response.BadRequest(c, "Invalid request body")
+	}
+
+	status, exists := req["status"]
+	if !exists {
+		return response.BadRequest(c, "Status is required")
+	}
+
+	if status != "active" && status != "inactive" {
+		return response.BadRequest(c, "Status must be 'active' or 'inactive'")
+	}
+
+	userID := middleware.GetUserID(c)
+	err = h.productUsecase.UpdateProductStatus(userID, id, status)
+	if err != nil {
+		// Business rule violations return 409 Conflict
+		if strings.Contains(err.Error(), "store inactive") || 
+		   strings.Contains(err.Error(), "category inactive") ||
+		   strings.Contains(err.Error(), "out of stock") {
+			return response.Conflict(c, err.Error())
+		}
+		return response.BadRequest(c, err.Error())
+	}
+
+	return response.Success(c, "Product status updated successfully", nil)
 }

@@ -111,6 +111,7 @@ func (r *Router) SetupProductRoutes(productUsecase *usecase.ProductUsecase) {
 
 	// Public routes
 	products.Get("/", productHandler.GetAllProducts)
+	products.Get("/status", middleware.JWTMiddleware(r.jwtManager), middleware.RequireAdmin(), productHandler.GetProductsByStatus)
 	products.Get("/slug/:slug", productHandler.GetProductBySlug)
 	products.Get("/:id", productHandler.GetProductByID)
 
@@ -125,6 +126,9 @@ func (r *Router) SetupProductRoutes(productUsecase *usecase.ProductUsecase) {
 	products.Post("/:id/photos", jwtMiddleware, productHandler.UploadProductPhoto)
 	products.Put("/:id/photos/:photoId/primary", jwtMiddleware, productHandler.SetPrimaryPhoto)
 	products.Delete("/:id/photos/:photoId", jwtMiddleware, productHandler.DeleteProductPhoto)
+
+	// Product status management (seller only)
+	products.Put("/:id/status", jwtMiddleware, productHandler.UpdateProductStatus)
 }
 
 func (r *Router) SetupTransactionRoutes(transactionUsecase *usecase.TransactionUsecase) {

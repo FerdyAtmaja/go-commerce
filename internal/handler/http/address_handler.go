@@ -25,8 +25,8 @@ func NewAddressHandler(addressUsecase *usecase.AddressUsecase) *AddressHandler {
 }
 
 // CreateAddress godoc
-// @Summary Create a new address
-// @Description Create a new address for the authenticated user
+// @Summary Create a new address (Authenticated User)
+// @Description Create a new address for the authenticated user. Requires authentication.
 // @Tags Addresses
 // @Accept json
 // @Produce json
@@ -60,8 +60,8 @@ func (h *AddressHandler) CreateAddress(c *fiber.Ctx) error {
 }
 
 // GetMyAddresses godoc
-// @Summary Get current user's addresses
-// @Description Get all addresses for the authenticated user with pagination
+// @Summary Get current user's addresses (Authenticated User)
+// @Description Get all addresses for the authenticated user with pagination. Requires authentication.
 // @Tags Addresses
 // @Accept json
 // @Produce json
@@ -90,8 +90,8 @@ func (h *AddressHandler) GetMyAddresses(c *fiber.Ctx) error {
 }
 
 // GetAddressByID godoc
-// @Summary Get address by ID
-// @Description Get a single address by its ID (owner only)
+// @Summary Get address by ID (Authenticated User)
+// @Description Get a single address by its ID (owner only). Only address owner can access.
 // @Tags Addresses
 // @Accept json
 // @Produce json
@@ -123,8 +123,8 @@ func (h *AddressHandler) GetAddressByID(c *fiber.Ctx) error {
 }
 
 // UpdateAddress godoc
-// @Summary Update an address
-// @Description Update an existing address (owner only)
+// @Summary Update an address (Authenticated User)
+// @Description Update an existing address (owner only). Only address owner can update.
 // @Tags Addresses
 // @Accept json
 // @Produce json
@@ -162,8 +162,8 @@ func (h *AddressHandler) UpdateAddress(c *fiber.Ctx) error {
 }
 
 // DeleteAddress godoc
-// @Summary Delete an address
-// @Description Delete an existing address (owner only)
+// @Summary Delete an address (Authenticated User)
+// @Description Delete an existing address (owner only). Only address owner can delete.
 // @Tags Addresses
 // @Accept json
 // @Produce json
@@ -194,8 +194,8 @@ func (h *AddressHandler) DeleteAddress(c *fiber.Ctx) error {
 }
 
 // SetDefaultAddress godoc
-// @Summary Set default address
-// @Description Set an address as default for the authenticated user
+// @Summary Set default address (Authenticated User)
+// @Description Set an address as default for the authenticated user. Requires authentication.
 // @Tags Addresses
 // @Accept json
 // @Produce json
@@ -226,8 +226,8 @@ func (h *AddressHandler) SetDefaultAddress(c *fiber.Ctx) error {
 }
 
 // GetDefaultAddress godoc
-// @Summary Get default address
-// @Description Get the default address for the authenticated user
+// @Summary Get default address (Authenticated User)
+// @Description Get the default address for the authenticated user. Requires authentication.
 // @Tags Addresses
 // @Accept json
 // @Produce json
@@ -251,8 +251,8 @@ func (h *AddressHandler) GetDefaultAddress(c *fiber.Ctx) error {
 }
 
 // GetProvinces godoc
-// @Summary Get all provinces
-// @Description Get all provinces in Indonesia (public endpoint)
+// @Summary Get all provinces (Public)
+// @Description Get all provinces in Indonesia. This is a public endpoint accessible to everyone.
 // @Tags Regions
 // @Accept json
 // @Produce json
@@ -269,8 +269,8 @@ func (h *AddressHandler) GetProvinces(c *fiber.Ctx) error {
 }
 
 // GetCitiesByProvince godoc
-// @Summary Get cities by province
-// @Description Get all cities in a specific province (public endpoint)
+// @Summary Get cities by province (Public)
+// @Description Get all cities in a specific province. This is a public endpoint accessible to everyone.
 // @Tags Regions
 // @Accept json
 // @Produce json

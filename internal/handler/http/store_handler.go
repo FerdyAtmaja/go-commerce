@@ -25,8 +25,8 @@ func NewStoreHandler(storeUsecase *usecase.StoreUsecase) *StoreHandler {
 }
 
 // GetMyStore godoc
-// @Summary Get current user's store
-// @Description Get store information for the authenticated user
+// @Summary Get current user's store (Seller only)
+// @Description Get store information for the authenticated user. Only store owners can access their store.
 // @Tags Stores
 // @Accept json
 // @Produce json
@@ -50,8 +50,8 @@ func (h *StoreHandler) GetMyStore(c *fiber.Ctx) error {
 }
 
 // UpdateMyStore godoc
-// @Summary Update current user's store
-// @Description Update store information for the authenticated user
+// @Summary Update current user's store (Seller only)
+// @Description Update store information for the authenticated user. Only store owners can update their store.
 // @Tags Stores
 // @Accept json
 // @Produce json
@@ -85,8 +85,8 @@ func (h *StoreHandler) UpdateMyStore(c *fiber.Ctx) error {
 }
 
 // GetAllStores godoc
-// @Summary Get all stores
-// @Description Get all stores with pagination and search (public endpoint)
+// @Summary Get all stores (Public)
+// @Description Get all stores with pagination and search. This is a public endpoint accessible to everyone.
 // @Tags Stores
 // @Accept json
 // @Produce json
@@ -110,8 +110,8 @@ func (h *StoreHandler) GetAllStores(c *fiber.Ctx) error {
 }
 
 // GetStoreByID godoc
-// @Summary Get store by ID
-// @Description Get a single store by its ID (public endpoint)
+// @Summary Get store by ID (Public)
+// @Description Get a single store by its ID. This is a public endpoint accessible to everyone.
 // @Tags Stores
 // @Accept json
 // @Produce json
@@ -136,8 +136,8 @@ func (h *StoreHandler) GetStoreByID(c *fiber.Ctx) error {
 }
 
 // CreateStore godoc
-// @Summary Create a new store
-// @Description Create a new store for the authenticated user
+// @Summary Create a new store (Authenticated User)
+// @Description Create a new store for the authenticated user. Requires authentication.
 // @Tags Stores
 // @Accept json
 // @Produce json

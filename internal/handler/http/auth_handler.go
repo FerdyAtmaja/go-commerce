@@ -22,8 +22,8 @@ func NewAuthHandler(authUsecase *usecase.AuthUsecase) *AuthHandler {
 }
 
 // Register godoc
-// @Summary Register a new user
-// @Description Register a new user with email, password, and profile information
+// @Summary Register a new user (Public)
+// @Description Register a new user with email, password, and profile information. This is a public endpoint accessible to everyone.
 // @Tags Authentication
 // @Accept json
 // @Produce json
@@ -50,8 +50,8 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 }
 
 // Login godoc
-// @Summary User login
-// @Description Authenticate user with email and password
+// @Summary User login (Public)
+// @Description Authenticate user with email and password. This is a public endpoint accessible to everyone.
 // @Tags Authentication
 // @Accept json
 // @Produce json
@@ -78,13 +78,14 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 }
 
 // Logout godoc
-// @Summary User logout
-// @Description Logout current user
+// @Summary User logout (Authenticated User)
+// @Description Logout current user. Requires authentication.
 // @Tags Authentication
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {object} response.Response "Logout successful"
+// @Failure 401 {object} response.Response "Unauthorized"
 // @Router /auth/logout [post]
 func (h *AuthHandler) Logout(c *fiber.Ctx) error {
 	// In a real implementation, you might want to blacklist the token

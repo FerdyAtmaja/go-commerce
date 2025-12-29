@@ -23,8 +23,8 @@ func NewUserHandler(userUsecase *usecase.UserUsecase) *UserHandler {
 }
 
 // GetProfile godoc
-// @Summary Get user profile
-// @Description Get current user profile information
+// @Summary Get user profile (Authenticated User)
+// @Description Get current user profile information. Requires authentication.
 // @Tags Users
 // @Accept json
 // @Produce json
@@ -48,8 +48,8 @@ func (h *UserHandler) GetProfile(c *fiber.Ctx) error {
 }
 
 // UpdateProfile godoc
-// @Summary Update user profile
-// @Description Update current user profile information
+// @Summary Update user profile (Authenticated User)
+// @Description Update current user profile information. Requires authentication.
 // @Tags Users
 // @Accept json
 // @Produce json
@@ -83,8 +83,8 @@ func (h *UserHandler) UpdateProfile(c *fiber.Ctx) error {
 }
 
 // ChangePassword godoc
-// @Summary Change user password
-// @Description Change current user password
+// @Summary Change user password (Authenticated User)
+// @Description Change current user password. Requires authentication.
 // @Tags Users
 // @Accept json
 // @Produce json

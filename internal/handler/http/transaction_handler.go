@@ -21,8 +21,8 @@ func NewTransactionHandler(transactionUsecase *usecase.TransactionUsecase) *Tran
 }
 
 // CreateTransaction godoc
-// @Summary Create a new transaction
-// @Description Create a new transaction with multiple items (atomic operation)
+// @Summary Create a new transaction (Authenticated User)
+// @Description Create a new transaction with multiple items (atomic operation). Requires authentication.
 // @Tags Transactions
 // @Accept json
 // @Produce json
@@ -49,8 +49,8 @@ func (h *TransactionHandler) CreateTransaction(c *fiber.Ctx) error {
 }
 
 // GetTransactionByID godoc
-// @Summary Get transaction by ID
-// @Description Get a specific transaction by ID (ownership validation)
+// @Summary Get transaction by ID (Authenticated User)
+// @Description Get a specific transaction by ID (ownership validation). Only transaction owner can access.
 // @Tags Transactions
 // @Accept json
 // @Produce json
@@ -78,8 +78,8 @@ func (h *TransactionHandler) GetTransactionByID(c *fiber.Ctx) error {
 }
 
 // GetMyTransactions godoc
-// @Summary Get my transactions
-// @Description Get current user's transaction history with pagination
+// @Summary Get my transactions (Authenticated User)
+// @Description Get current user's transaction history with pagination. Requires authentication.
 // @Tags Transactions
 // @Accept json
 // @Produce json

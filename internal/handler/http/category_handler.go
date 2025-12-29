@@ -24,7 +24,7 @@ func NewCategoryHandler(categoryUsecase *usecase.CategoryUsecase) *CategoryHandl
 }
 
 // CreateCategory godoc
-// @Summary Create a new category
+// @Summary Create a new category (Admin only)
 // @Description Create a new product category (admin only). For root category, omit parent_id or set to null. For subcategory, provide parent_id.
 // @Tags Categories
 // @Accept json
@@ -59,8 +59,8 @@ func (h *CategoryHandler) CreateCategory(c *fiber.Ctx) error {
 }
 
 // GetAllCategories godoc
-// @Summary Get all categories
-// @Description Get all product categories with pagination (public endpoint)
+// @Summary Get all categories (Public)
+// @Description Get all product categories with pagination. This is a public endpoint accessible to everyone.
 // @Tags Categories
 // @Accept json
 // @Produce json
@@ -82,8 +82,8 @@ func (h *CategoryHandler) GetAllCategories(c *fiber.Ctx) error {
 }
 
 // GetCategoryByID godoc
-// @Summary Get category by ID
-// @Description Get a single category by its ID (public endpoint)
+// @Summary Get category by ID (Public)
+// @Description Get a single category by its ID. This is a public endpoint accessible to everyone.
 // @Tags Categories
 // @Accept json
 // @Produce json
@@ -108,7 +108,7 @@ func (h *CategoryHandler) GetCategoryByID(c *fiber.Ctx) error {
 }
 
 // UpdateCategory godoc
-// @Summary Update a category
+// @Summary Update a category (Admin only)
 // @Description Update an existing category (admin only)
 // @Tags Categories
 // @Accept json
@@ -146,7 +146,7 @@ func (h *CategoryHandler) UpdateCategory(c *fiber.Ctx) error {
 }
 
 // DeactivateCategory godoc
-// @Summary Deactivate a category
+// @Summary Deactivate a category (Admin only)
 // @Description Deactivate a category following business rules: cannot deactivate if has active children or used by active products (admin only)
 // @Tags Categories
 // @Accept json
@@ -174,7 +174,7 @@ func (h *CategoryHandler) DeactivateCategory(c *fiber.Ctx) error {
 }
 
 // ActivateCategory godoc
-// @Summary Activate a category
+// @Summary Activate a category (Admin only)
 // @Description Activate a category following business rules: cannot activate if parent is inactive (admin only)
 // @Tags Categories
 // @Accept json
@@ -202,7 +202,7 @@ func (h *CategoryHandler) ActivateCategory(c *fiber.Ctx) error {
 }
 
 // DeleteCategory godoc
-// @Summary Delete a category
+// @Summary Delete a category (Admin only)
 // @Description Physical delete of category (admin only). Only allowed if never used by any product in history
 // @Tags Categories
 // @Accept json

@@ -361,3 +361,69 @@ func (u *ProductUsecase) GetProductsByStatus(status string, page, limit int) ([]
 	return u.productRepo.GetByStatus(status, limit, offset)
 }
 
+// UpdateProductStatus implements business rules for product status changes
+func (u *ProductUsecase) UpdateProductStatus(userID, productID uint64, status string) error {
+	// Get user's store
+	store, err := u.storeRepo.GetByUserID(userID)
+	if err != nil {
+		return errors.New("store not found")
+	}
+
+	// Check ownership
+	err = u.productRepo.CheckOwnership(productID, store.ID)
+	if err != nil {
+		return err
+	}
+
+	// Get current product
+	product, err := u.productRepo.GetByID(productID)
+	if err != nil {
+		return errors.New("product not found")
+	}
+
+	// Business rules based on rancangan-update.txt
+	if status == "active" {
+		// ACTIVATE PRODUCT rules
+		if product.Status == "active" {
+			return errors.New("product already active") // 409 noop
+		}
+
+		// Check store status
+		if store.Status != "active" {
+			return errors.New("cannot activate product: store inactive") // 403 forbidden
+		}
+
+		// Check category status
+		category, err := u.categoryRepo.GetByID(product.IDCategory)
+		if err != nil {
+			return errors.New("category not found")
+		}
+		if category.Status != "active" {
+			return errors.New("cannot activate product: category inactive") // 409 conflict
+		}
+
+		// Optional: Check stock (based on business requirement)
+		if product.Stok <= 0 {
+			return errors.New("cannot activate product: out of stock") // 409 conflict
+		}
+	} else if status == "inactive" {
+		// DEACTIVATE PRODUCT rules
+		if product.Status == "inactive" {
+			return errors.New("product already inactive") // 409 noop
+		}
+		// Deactivation is always allowed for sellers
+	}
+
+	// Update status
+	product.Status = status
+	if err := u.productRepo.Update(product); err != nil {
+		return errors.New("failed to update product status")
+	}
+
+	// Update category has_active_product flag
+	go func() {
+		u.categoryRepo.UpdateHasActiveProduct(product.IDCategory)
+	}()
+
+	return nil
+}
