@@ -102,3 +102,10 @@ func (m *PhotoProdukRepositoryMock) SetPrimary(productID, photoID uint64) error 
 	args := m.Called(productID, photoID)
 	return args.Error(0)
 }
+func (m *ProductRepositoryMock) GetByIDForManagement(id uint64) (*domain.Product, error) {
+	args := m.Called(id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*domain.Product), args.Error(1)
+}

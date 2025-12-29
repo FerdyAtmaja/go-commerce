@@ -373,7 +373,9 @@ definitions:
         type: number
       status:
         enum:
+        - pending
         - active
+        - inactive
         - suspended
         type: string
       updated_at:
@@ -566,11 +568,6 @@ definitions:
       name:
         maxLength: 255
         minLength: 2
-        type: string
-      status:
-        enum:
-        - active
-        - suspended
         type: string
       url_foto:
         type: string
@@ -1017,6 +1014,216 @@ paths:
       summary: Unsuspend a product (Admin only)
       tags:
       - Products
+  /admin/stores/{id}/approve:
+    put:
+      consumes:
+      - application/json
+      description: Approve a pending store to make it active. Admin can approve stores
+        waiting for verification.
+      parameters:
+      - description: Store ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Store approved successfully
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden - admin only
+          schema:
+            $ref: '#/definitions/response.Response'
+        "409":
+          description: Conflict - store not pending
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Approve pending store (Admin only)
+      tags:
+      - Stores
+  /admin/stores/{id}/reject:
+    put:
+      consumes:
+      - application/json
+      description: Reject a pending store. Store will be set to inactive status.
+      parameters:
+      - description: Store ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Store rejected successfully
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden - admin only
+          schema:
+            $ref: '#/definitions/response.Response'
+        "409":
+          description: Conflict - store not pending
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Reject pending store (Admin only)
+      tags:
+      - Stores
+  /admin/stores/{id}/suspend:
+    put:
+      consumes:
+      - application/json
+      description: Suspend any store. Admin can suspend stores for violations, reports,
+        etc.
+      parameters:
+      - description: Store ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Store suspended successfully
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden - admin only
+          schema:
+            $ref: '#/definitions/response.Response'
+        "409":
+          description: Conflict - already suspended
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Suspend a store (Admin only)
+      tags:
+      - Stores
+  /admin/stores/{id}/unsuspend:
+    put:
+      consumes:
+      - application/json
+      description: Unsuspend a suspended store. Store will be set to inactive, seller
+        must activate it.
+      parameters:
+      - description: Store ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Store unsuspended successfully
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden - admin only
+          schema:
+            $ref: '#/definitions/response.Response'
+        "409":
+          description: Conflict - not suspended
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Unsuspend a store (Admin only)
+      tags:
+      - Stores
+  /admin/stores/pending:
+    get:
+      consumes:
+      - application/json
+      description: Get all stores waiting for admin approval with pagination and search.
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Search by store name
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Pending stores retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.PaginatedResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/domain.Store'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden - admin only
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get pending stores (Admin only)
+      tags:
+      - Stores
   /auth/login:
     post:
       consumes:
@@ -2099,8 +2306,8 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get all stores with pagination and search. This is a public endpoint
-        accessible to everyone.
+      description: Get all active stores with pagination and search. Only shows active
+        stores to public.
       parameters:
       - default: 1
         description: Page number
@@ -2134,7 +2341,7 @@ paths:
           description: Internal server error
           schema:
             $ref: '#/definitions/response.Response'
-      summary: Get all stores (Public)
+      summary: Get all active stores (Public)
       tags:
       - Stores
     post:
@@ -2177,8 +2384,8 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get a single store by its ID. This is a public endpoint accessible
-        to everyone.
+      description: Get a single active store by its ID. Only shows active stores to
+        public.
       parameters:
       - description: Store ID
         in: path
@@ -2274,6 +2481,70 @@ paths:
       security:
       - BearerAuth: []
       summary: Update current user's store (Seller only)
+      tags:
+      - Stores
+  /stores/my/activate:
+    put:
+      consumes:
+      - application/json
+      description: Activate the authenticated user's store. Store must not be suspended
+        and profile must be complete.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Store activated successfully
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: Forbidden - store suspended
+          schema:
+            $ref: '#/definitions/response.Response'
+        "409":
+          description: Conflict - already active or profile incomplete
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Activate store (Seller only)
+      tags:
+      - Stores
+  /stores/my/deactivate:
+    put:
+      consumes:
+      - application/json
+      description: Deactivate the authenticated user's store. Only active stores can
+        be deactivated.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Store deactivated successfully
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "409":
+          description: Conflict - store not active
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: Deactivate store (Seller only)
       tags:
       - Stores
   /transactions:

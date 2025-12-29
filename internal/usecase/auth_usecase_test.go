@@ -9,6 +9,7 @@ import (
 	"go-commerce/pkg/jwt"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -46,7 +47,7 @@ func TestAuthUsecase_Login_Success(t *testing.T) {
 
 	// Mock expectations
 	mockUserRepo.On("GetByEmail", email).Return(user, nil)
-	mockUserRepo.On("Update", user).Return(nil) // Mock for goroutine LastLoginAt update
+	mockUserRepo.On("UpdateLastLogin", user.ID, mock.AnythingOfType("time.Time")).Return(nil)
 
 	// Execute
 	result, err := authUsecase.Login(req)
@@ -127,7 +128,7 @@ func TestAuthUsecase_Login_InvalidPassword(t *testing.T) {
 		Password: wrongPassword,
 	}
 
-	// Mock expectations - no Update mock needed since password validation fails before goroutine
+	// Mock expectations - no UpdateLastLogin mock needed since password validation fails before goroutine
 	mockUserRepo.On("GetByEmail", email).Return(user, nil)
 
 	// Execute

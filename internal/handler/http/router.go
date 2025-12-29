@@ -54,13 +54,29 @@ func (r *Router) SetupStoreRoutes(storeUsecase *usecase.StoreUsecase) {
 	api := r.app.Group("/api/v1")
 	stores := api.Group("/stores")
 
-	// Public routes
+	// Public routes - only show active stores
 	stores.Get("/", storeHandler.GetAllStores)
 	stores.Get("/:id", storeHandler.GetStoreByID)
 
 	// Protected routes
-	stores.Get("/my", middleware.JWTMiddleware(r.jwtManager), storeHandler.GetMyStore)
-	stores.Put("/my", middleware.JWTMiddleware(r.jwtManager), storeHandler.UpdateMyStore)
+	jwtMiddleware := middleware.JWTMiddleware(r.jwtManager)
+	stores.Post("/", jwtMiddleware, storeHandler.CreateStore)
+	stores.Get("/my", jwtMiddleware, storeHandler.GetMyStore)
+	stores.Put("/my", jwtMiddleware, storeHandler.UpdateMyStore)
+
+	// Store status management (seller only)
+	stores.Put("/my/activate", jwtMiddleware, storeHandler.ActivateStore)
+	stores.Put("/my/deactivate", jwtMiddleware, storeHandler.DeactivateStore)
+
+	// Admin routes
+	admin := api.Group("/admin")
+	adminMiddleware := middleware.JWTMiddleware(r.jwtManager)
+	requireAdmin := middleware.RequireAdmin()
+	admin.Get("/stores/pending", adminMiddleware, requireAdmin, storeHandler.GetPendingStores)
+	admin.Put("/stores/:id/approve", adminMiddleware, requireAdmin, storeHandler.ApproveStore)
+	admin.Put("/stores/:id/reject", adminMiddleware, requireAdmin, storeHandler.RejectStore)
+	admin.Put("/stores/:id/suspend", adminMiddleware, requireAdmin, storeHandler.SuspendStore)
+	admin.Put("/stores/:id/unsuspend", adminMiddleware, requireAdmin, storeHandler.UnsuspendStore)
 }
 
 func (r *Router) SetupCategoryRoutes(categoryUsecase *usecase.CategoryUsecase) {
