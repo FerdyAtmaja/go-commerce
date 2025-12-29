@@ -26,14 +26,14 @@ func NewAddressHandler(addressUsecase *usecase.AddressUsecase) *AddressHandler {
 
 // CreateAddress godoc
 // @Summary Create a new address (Authenticated User)
-// @Description Create a new address for the authenticated user. Requires authentication.
+// @Description Create a new address for the authenticated user with province and city validation. Requires authentication.
 // @Tags Addresses
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param request body domain.CreateAddressRequest true "Address creation request"
+// @Param request body domain.CreateAddressRequest true "Address creation request with province_id and city_id"
 // @Success 201 {object} response.Response{data=domain.Address} "Address created successfully"
-// @Failure 400 {object} response.Response "Bad request"
+// @Failure 400 {object} response.Response "Bad request - validation failed or invalid region"
 // @Failure 401 {object} response.Response "Unauthorized"
 // @Router /addresses [post]
 func (h *AddressHandler) CreateAddress(c *fiber.Ctx) error {
@@ -124,15 +124,15 @@ func (h *AddressHandler) GetAddressByID(c *fiber.Ctx) error {
 
 // UpdateAddress godoc
 // @Summary Update an address (Authenticated User)
-// @Description Update an existing address (owner only). Only address owner can update.
+// @Description Update an existing address with province and city validation (owner only). Only address owner can update.
 // @Tags Addresses
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param id path int true "Address ID"
-// @Param request body domain.UpdateAddressRequest true "Address update request"
+// @Param request body domain.UpdateAddressRequest true "Address update request with optional province_id and city_id"
 // @Success 200 {object} response.Response{data=domain.Address} "Address updated successfully"
-// @Failure 400 {object} response.Response "Bad request"
+// @Failure 400 {object} response.Response "Bad request - validation failed or invalid region"
 // @Failure 401 {object} response.Response "Unauthorized"
 // @Failure 404 {object} response.Response "Address not found"
 // @Router /addresses/{id} [put]
@@ -151,6 +151,10 @@ func (h *AddressHandler) UpdateAddress(c *fiber.Ctx) error {
 	var req domain.UpdateAddressRequest
 	if err := c.BodyParser(&req); err != nil {
 		return response.BadRequest(c, "Invalid request body")
+	}
+
+	if err := h.validator.Struct(&req); err != nil {
+		return response.BadRequest(c, "Validation failed: "+err.Error())
 	}
 
 	address, err := h.addressUsecase.UpdateAddress(addressID, userID, &req)

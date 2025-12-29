@@ -3,6 +3,7 @@ package usecase
 import (
 	"errors"
 	"log"
+	"strings"
 	"time"
 
 	"go-commerce/internal/domain"
@@ -78,10 +79,12 @@ func (u *AuthUsecase) Register(req *domain.RegisterRequest) (*domain.AuthRespons
 	}
 
 	// Auto create store
+	username := strings.ToLower(strings.ReplaceAll(req.Name, " ", ""))
 	store := &domain.Store{
 		UserID:      user.ID,
-		Name:        req.Name + "'s Store",
+		Name:        "toko-" + username,
 		Description: "Welcome to " + req.Name + "'s Store",
+		Status:      "active", // Auto-activate store on registration
 	}
 
 	if err := tx.Create(store).Error; err != nil {

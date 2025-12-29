@@ -71,13 +71,13 @@ func (r *Router) SetupStoreRoutes(storeUsecase *usecase.StoreUsecase) {
 	// Public route with ID parameter (must be after /my routes)
 	stores.Get("/:id", storeHandler.GetStoreByID)
 
-	// Admin routes
+	// Admin routes - COMMENTED: Pending approval logic disabled
 	admin := api.Group("/admin")
 	adminMiddleware := middleware.JWTMiddleware(r.jwtManager)
 	requireAdmin := middleware.RequireAdmin()
-	admin.Get("/stores/pending", adminMiddleware, requireAdmin, storeHandler.GetPendingStores)
-	admin.Put("/stores/:id/approve", adminMiddleware, requireAdmin, storeHandler.ApproveStore)
-	admin.Put("/stores/:id/reject", adminMiddleware, requireAdmin, storeHandler.RejectStore)
+	// admin.Get("/stores/pending", adminMiddleware, requireAdmin, storeHandler.GetPendingStores)
+	// admin.Put("/stores/:id/approve", adminMiddleware, requireAdmin, storeHandler.ApproveStore)
+	// admin.Put("/stores/:id/reject", adminMiddleware, requireAdmin, storeHandler.RejectStore)
 	admin.Put("/stores/:id/suspend", adminMiddleware, requireAdmin, storeHandler.SuspendStore)
 	admin.Put("/stores/:id/unsuspend", adminMiddleware, requireAdmin, storeHandler.UnsuspendStore)
 }
@@ -119,9 +119,9 @@ func (r *Router) SetupAddressRoutes(addressUsecase *usecase.AddressUsecase) {
 	addresses.Delete("/:id", jwtMiddleware, addressHandler.DeleteAddress)
 
 	// Utility routes for Indonesia regions
-	provinces := api.Group("/provinces")
-	provinces.Get("/", addressHandler.GetProvinces)
-	provinces.Get("/:provinceId/cities", addressHandler.GetCitiesByProvince)
+	regions := api.Group("/regions")
+	regions.Get("/provinces", addressHandler.GetProvinces)
+	regions.Get("/provinces/:provinceId/cities", addressHandler.GetCitiesByProvince)
 }
 
 func (r *Router) SetupProductRoutes(productUsecase *usecase.ProductUsecase) {

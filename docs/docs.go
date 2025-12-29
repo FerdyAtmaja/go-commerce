@@ -100,7 +100,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Create a new address for the authenticated user. Requires authentication.",
+                "description": "Create a new address for the authenticated user with province and city validation. Requires authentication.",
                 "consumes": [
                     "application/json"
                 ],
@@ -113,7 +113,7 @@ const docTemplate = `{
                 "summary": "Create a new address (Authenticated User)",
                 "parameters": [
                     {
-                        "description": "Address creation request",
+                        "description": "Address creation request with province_id and city_id",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -142,7 +142,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad request",
+                        "description": "Bad request - validation failed or invalid region",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -280,7 +280,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Update an existing address (owner only). Only address owner can update.",
+                "description": "Update an existing address with province and city validation (owner only). Only address owner can update.",
                 "consumes": [
                     "application/json"
                 ],
@@ -300,7 +300,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Address update request",
+                        "description": "Address update request with optional province_id and city_id",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -329,7 +329,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad request",
+                        "description": "Bad request - validation failed or invalid region",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -682,211 +682,6 @@ const docTemplate = `{
                     },
                     "409": {
                         "description": "Conflict - product is not suspended",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/stores/pending": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Get all stores waiting for admin approval with pagination and search.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Stores"
-                ],
-                "summary": "Get pending stores (Admin only)",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "default": 1,
-                        "description": "Page number",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 10,
-                        "description": "Items per page",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Search by store name",
-                        "name": "search",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Pending stores retrieved successfully",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/response.PaginatedResponse"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/domain.Store"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden - admin only",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/stores/{id}/approve": {
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Approve a pending store to make it active. Admin can approve stores waiting for verification.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Stores"
-                ],
-                "summary": "Approve pending store (Admin only)",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Store ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Store approved successfully",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden - admin only",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict - store not pending",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/stores/{id}/reject": {
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Reject a pending store. Store will be set to inactive status.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Stores"
-                ],
-                "summary": "Reject pending store (Admin only)",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Store ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Store rejected successfully",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden - admin only",
-                        "schema": {
-                            "$ref": "#/definitions/response.Response"
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict - store not pending",
                         "schema": {
                             "$ref": "#/definitions/response.Response"
                         }
@@ -3879,11 +3674,19 @@ const docTemplate = `{
         "domain.Address": {
             "type": "object",
             "required": [
+                "city_id",
                 "detail_alamat",
                 "judul_alamat",
-                "nama_penerima"
+                "nama_penerima",
+                "province_id"
             ],
             "properties": {
+                "city_id": {
+                    "type": "string"
+                },
+                "city_name": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -3914,6 +3717,13 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 20,
                     "minLength": 10
+                },
+                "province_id": {
+                    "type": "string"
+                },
+                "province_name": {
+                    "description": "Virtual fields for API response",
+                    "type": "string"
                 },
                 "updated_at": {
                     "type": "string"
@@ -4032,11 +3842,16 @@ const docTemplate = `{
         "domain.CreateAddressRequest": {
             "type": "object",
             "required": [
+                "city_id",
                 "detail_alamat",
                 "judul_alamat",
-                "nama_penerima"
+                "nama_penerima",
+                "province_id"
             ],
             "properties": {
+                "city_id": {
+                    "type": "string"
+                },
                 "detail_alamat": {
                     "type": "string"
                 },
@@ -4061,6 +3876,9 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 20,
                     "minLength": 10
+                },
+                "province_id": {
+                    "type": "string"
                 }
             }
         },
@@ -4627,6 +4445,9 @@ const docTemplate = `{
         "domain.UpdateAddressRequest": {
             "type": "object",
             "properties": {
+                "city_id": {
+                    "type": "string"
+                },
                 "detail_alamat": {
                     "type": "string",
                     "minLength": 2
@@ -4652,6 +4473,9 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 20,
                     "minLength": 10
+                },
+                "province_id": {
+                    "type": "string"
                 }
             }
         },

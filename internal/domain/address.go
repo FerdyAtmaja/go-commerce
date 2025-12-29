@@ -13,6 +13,8 @@ type Address struct {
 	NamaPenerima  string         `json:"nama_penerima" gorm:"column:nama_penerima;not null" validate:"required,min=2,max=255"`
 	NoTelp        string         `json:"notelp" gorm:"column:notelp" validate:"omitempty,min=10,max=20"`
 	DetailAlamat  string         `json:"detail_alamat" gorm:"column:detail_alamat;type:text;not null" validate:"required"`
+	ProvinceID    string         `json:"province_id" gorm:"column:province_id" validate:"required"`
+	CityID        string         `json:"city_id" gorm:"column:city_id" validate:"required"`
 	KodePos       string         `json:"kode_pos" gorm:"column:kode_pos" validate:"omitempty,max=10"`
 	IsDefault     bool           `json:"is_default" gorm:"column:is_default;default:false"`
 	CreatedAt     time.Time      `json:"created_at"`
@@ -21,6 +23,9 @@ type Address struct {
 
 	// Relations
 	User User `json:"user,omitempty" gorm:"foreignKey:UserID;references:ID"`
+	// Virtual fields for API response
+	ProvinceName string `json:"province_name,omitempty" gorm:"-"`
+	CityName     string `json:"city_name,omitempty" gorm:"-"`
 }
 
 func (Address) TableName() string {
@@ -43,6 +48,8 @@ type CreateAddressRequest struct {
 	NamaPenerima string `json:"nama_penerima" validate:"required,min=2,max=255"`
 	NoTelp       string `json:"notelp" validate:"omitempty,min=10,max=20"`
 	DetailAlamat string `json:"detail_alamat" validate:"required"`
+	ProvinceID   string `json:"province_id" validate:"required"`
+	CityID       string `json:"city_id" validate:"required"`
 	KodePos      string `json:"kode_pos" validate:"omitempty,max=10"`
 	IsDefault    bool   `json:"is_default"`
 }
@@ -52,6 +59,8 @@ type UpdateAddressRequest struct {
 	NamaPenerima *string `json:"nama_penerima,omitempty" validate:"omitempty,min=2,max=255"`
 	NoTelp       *string `json:"notelp,omitempty" validate:"omitempty,min=10,max=20"`
 	DetailAlamat *string `json:"detail_alamat,omitempty" validate:"omitempty,min=2"`
+	ProvinceID   *string `json:"province_id,omitempty" validate:"omitempty"`
+	CityID       *string `json:"city_id,omitempty" validate:"omitempty"`
 	KodePos      *string `json:"kode_pos,omitempty" validate:"omitempty,max=10"`
 	IsDefault    *bool   `json:"is_default,omitempty"`
 }

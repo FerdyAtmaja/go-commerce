@@ -33,11 +33,22 @@ func (u *AddressUsecase) CreateAddress(userID uint64, req *domain.CreateAddressR
 	if len(req.DetailAlamat) < 2 {
 		return nil, errors.New("detail_alamat must be at least 2 characters")
 	}
+	if req.ProvinceID == "" {
+		return nil, errors.New("province_id is required")
+	}
+	if req.CityID == "" {
+		return nil, errors.New("city_id is required")
+	}
 	if len(req.NoTelp) > 0 && (len(req.NoTelp) < 10 || len(req.NoTelp) > 20) {
 		return nil, errors.New("notelp must be between 10 and 20 characters when provided")
 	}
 	if len(req.KodePos) > 10 {
 		return nil, errors.New("kode_pos must be maximum 10 characters")
+	}
+
+	// Validate province and city using region service
+	if err := u.regionService.ValidateProvinceAndCity(req.ProvinceID, req.CityID); err != nil {
+		return nil, errors.New("invalid province or city: " + err.Error())
 	}
 
 	address := &domain.Address{
@@ -46,6 +57,8 @@ func (u *AddressUsecase) CreateAddress(userID uint64, req *domain.CreateAddressR
 		NamaPenerima: req.NamaPenerima,
 		NoTelp:       req.NoTelp,
 		DetailAlamat: req.DetailAlamat,
+		ProvinceID:   req.ProvinceID,
+		CityID:       req.CityID,
 		KodePos:      req.KodePos,
 		IsDefault:    req.IsDefault,
 	}
@@ -68,6 +81,9 @@ func (u *AddressUsecase) CreateAddress(userID uint64, req *domain.CreateAddressR
 		}
 	}
 
+	// Populate province and city names for response
+	u.populateRegionNames(address)
+
 	return address, nil
 }
 
@@ -84,6 +100,9 @@ func (u *AddressUsecase) GetAddressByID(addressID, userID uint64) (*domain.Addre
 		}
 		return nil, errors.New("failed to get address")
 	}
+
+	// Populate province and city names
+	u.populateRegionNames(address)
 
 	return address, nil
 }
@@ -102,6 +121,9 @@ func (u *AddressUsecase) GetMyAddresses(userID uint64, page, limit int) ([]*doma
 	if err != nil {
 		return nil, response.PaginationMeta{}, errors.New("failed to get addresses")
 	}
+
+	// Populate province and city names for all addresses
+	u.populateRegionNamesForAddresses(addresses)
 
 	totalPage := int(math.Ceil(float64(total) / float64(limit)))
 
@@ -129,6 +151,13 @@ func (u *AddressUsecase) UpdateAddress(addressID, userID uint64, req *domain.Upd
 		return nil, errors.New("failed to get address")
 	}
 
+	// Validate province and city if provided
+	if req.ProvinceID != nil && req.CityID != nil {
+		if err := u.regionService.ValidateProvinceAndCity(*req.ProvinceID, *req.CityID); err != nil {
+			return nil, errors.New("invalid province or city: " + err.Error())
+		}
+	}
+
 	// Update only provided fields with validation
 	if req.JudulAlamat != nil {
 		if len(*req.JudulAlamat) < 2 || len(*req.JudulAlamat) > 255 {
@@ -154,6 +183,12 @@ func (u *AddressUsecase) UpdateAddress(addressID, userID uint64, req *domain.Upd
 		}
 		address.DetailAlamat = *req.DetailAlamat
 	}
+	if req.ProvinceID != nil {
+		address.ProvinceID = *req.ProvinceID
+	}
+	if req.CityID != nil {
+		address.CityID = *req.CityID
+	}
 	if req.KodePos != nil {
 		if len(*req.KodePos) > 10 {
 			return nil, errors.New("kode_pos must be maximum 10 characters")
@@ -175,6 +210,9 @@ func (u *AddressUsecase) UpdateAddress(addressID, userID uint64, req *domain.Upd
 	if err := u.addressRepo.Update(address); err != nil {
 		return nil, errors.New("failed to update address")
 	}
+
+	// Populate province and city names for response
+	u.populateRegionNames(address)
 
 	return address, nil
 }
@@ -214,6 +252,9 @@ func (u *AddressUsecase) GetDefaultAddress(userID uint64) (*domain.Address, erro
 		return nil, errors.New("failed to get default address")
 	}
 
+	// Populate province and city names
+	u.populateRegionNames(address)
+
 	return address, nil
 }
 
@@ -231,4 +272,34 @@ func (u *AddressUsecase) GetCitiesByProvince(provinceID string) ([]*domain.City,
 		return nil, errors.New("failed to get cities: " + err.Error())
 	}
 	return cities, nil
+}
+
+// populateRegionNames fills province and city names for display
+func (u *AddressUsecase) populateRegionNames(address *domain.Address) {
+	// Get province name
+	if provinces, err := u.regionService.GetProvinces(); err == nil {
+		for _, province := range provinces {
+			if province.ID == address.ProvinceID {
+				address.ProvinceName = province.Name
+				break
+			}
+		}
+	}
+
+	// Get city name
+	if cities, err := u.regionService.GetCitiesByProvince(address.ProvinceID); err == nil {
+		for _, city := range cities {
+			if city.ID == address.CityID {
+				address.CityName = city.Name
+				break
+			}
+		}
+	}
+}
+
+// populateRegionNamesForAddresses fills province and city names for multiple addresses
+func (u *AddressUsecase) populateRegionNamesForAddresses(addresses []*domain.Address) {
+	for _, address := range addresses {
+		u.populateRegionNames(address)
+	}
 }

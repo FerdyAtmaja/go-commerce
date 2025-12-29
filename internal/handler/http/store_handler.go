@@ -192,6 +192,10 @@ func (h *StoreHandler) ActivateStore(c *fiber.Ctx) error {
 		if err.Error() == "STORE_ALREADY_ACTIVE" || err.Error() == "STORE_PROFILE_INCOMPLETE" {
 			return response.Conflict(c, err.Error())
 		}
+		// COMMENTED: Pending approval logic disabled
+		// if err.Error() == "STORE_PENDING_APPROVAL" {
+		// 	return response.Conflict(c, err.Error())
+		// }
 		return response.BadRequest(c, err.Error())
 	}
 
@@ -298,6 +302,8 @@ func (h *StoreHandler) UnsuspendStore(c *fiber.Ctx) error {
 // @Failure 403 {object} response.Response "Forbidden - admin only"
 // @Failure 409 {object} response.Response "Conflict - store not pending"
 // @Router /admin/stores/{id}/approve [put]
+// COMMENTED: Pending approval logic disabled
+/*
 func (h *StoreHandler) ApproveStore(c *fiber.Ctx) error {
 	id, err := strconv.ParseUint(c.Params("id"), 10, 64)
 	if err != nil {
@@ -314,6 +320,7 @@ func (h *StoreHandler) ApproveStore(c *fiber.Ctx) error {
 
 	return response.Success(c, "Store approved successfully", nil)
 }
+*/
 
 // RejectStore godoc
 // @Summary Reject pending store (Admin only)
@@ -329,6 +336,8 @@ func (h *StoreHandler) ApproveStore(c *fiber.Ctx) error {
 // @Failure 403 {object} response.Response "Forbidden - admin only"
 // @Failure 409 {object} response.Response "Conflict - store not pending"
 // @Router /admin/stores/{id}/reject [put]
+// COMMENTED: Pending approval logic disabled
+/*
 func (h *StoreHandler) RejectStore(c *fiber.Ctx) error {
 	id, err := strconv.ParseUint(c.Params("id"), 10, 64)
 	if err != nil {
@@ -345,6 +354,7 @@ func (h *StoreHandler) RejectStore(c *fiber.Ctx) error {
 
 	return response.Success(c, "Store rejected successfully", nil)
 }
+*/
 
 // GetPendingStores godoc
 // @Summary Get pending stores (Admin only)
@@ -361,6 +371,8 @@ func (h *StoreHandler) RejectStore(c *fiber.Ctx) error {
 // @Failure 403 {object} response.Response "Forbidden - admin only"
 // @Failure 500 {object} response.Response "Internal server error"
 // @Router /admin/stores/pending [get]
+// COMMENTED: Pending approval logic disabled
+/*
 func (h *StoreHandler) GetPendingStores(c *fiber.Ctx) error {
 	page, _ := strconv.Atoi(c.Query("page", "1"))
 	limit, _ := strconv.Atoi(c.Query("limit", "10"))
@@ -373,3 +385,4 @@ func (h *StoreHandler) GetPendingStores(c *fiber.Ctx) error {
 
 	return response.Paginated(c, "Pending stores retrieved successfully", stores, meta)
 }
+*/

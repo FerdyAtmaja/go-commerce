@@ -2,6 +2,10 @@ basePath: /api/v1
 definitions:
   domain.Address:
     properties:
+      city_id:
+        type: string
+      city_name:
+        type: string
       created_at:
         type: string
       detail_alamat:
@@ -25,6 +29,11 @@ definitions:
         maxLength: 20
         minLength: 10
         type: string
+      province_id:
+        type: string
+      province_name:
+        description: Virtual fields for API response
+        type: string
       updated_at:
         type: string
       user:
@@ -34,9 +43,11 @@ definitions:
       user_id:
         type: integer
     required:
+    - city_id
     - detail_alamat
     - judul_alamat
     - nama_penerima
+    - province_id
     type: object
   domain.AuthResponse:
     properties:
@@ -104,6 +115,8 @@ definitions:
     type: object
   domain.CreateAddressRequest:
     properties:
+      city_id:
+        type: string
       detail_alamat:
         type: string
       is_default:
@@ -123,10 +136,14 @@ definitions:
         maxLength: 20
         minLength: 10
         type: string
+      province_id:
+        type: string
     required:
+    - city_id
     - detail_alamat
     - judul_alamat
     - nama_penerima
+    - province_id
     type: object
   domain.CreateCategoryRequest:
     properties:
@@ -511,6 +528,8 @@ definitions:
     type: object
   domain.UpdateAddressRequest:
     properties:
+      city_id:
+        type: string
       detail_alamat:
         minLength: 2
         type: string
@@ -530,6 +549,8 @@ definitions:
       notelp:
         maxLength: 20
         minLength: 10
+        type: string
+      province_id:
         type: string
     type: object
   domain.UpdateCategoryRequest:
@@ -768,9 +789,10 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create a new address for the authenticated user. Requires authentication.
+      description: Create a new address for the authenticated user with province and
+        city validation. Requires authentication.
       parameters:
-      - description: Address creation request
+      - description: Address creation request with province_id and city_id
         in: body
         name: request
         required: true
@@ -789,7 +811,7 @@ paths:
                   $ref: '#/definitions/domain.Address'
               type: object
         "400":
-          description: Bad request
+          description: Bad request - validation failed or invalid region
           schema:
             $ref: '#/definitions/response.Response'
         "401":
@@ -880,15 +902,15 @@ paths:
     put:
       consumes:
       - application/json
-      description: Update an existing address (owner only). Only address owner can
-        update.
+      description: Update an existing address with province and city validation (owner
+        only). Only address owner can update.
       parameters:
       - description: Address ID
         in: path
         name: id
         required: true
         type: integer
-      - description: Address update request
+      - description: Address update request with optional province_id and city_id
         in: body
         name: request
         required: true
@@ -907,7 +929,7 @@ paths:
                   $ref: '#/definitions/domain.Address'
               type: object
         "400":
-          description: Bad request
+          description: Bad request - validation failed or invalid region
           schema:
             $ref: '#/definitions/response.Response'
         "401":
@@ -1139,85 +1161,6 @@ paths:
       summary: Unsuspend a product (Admin only)
       tags:
       - Products
-  /admin/stores/{id}/approve:
-    put:
-      consumes:
-      - application/json
-      description: Approve a pending store to make it active. Admin can approve stores
-        waiting for verification.
-      parameters:
-      - description: Store ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Store approved successfully
-          schema:
-            $ref: '#/definitions/response.Response'
-        "400":
-          description: Bad request
-          schema:
-            $ref: '#/definitions/response.Response'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/response.Response'
-        "403":
-          description: Forbidden - admin only
-          schema:
-            $ref: '#/definitions/response.Response'
-        "409":
-          description: Conflict - store not pending
-          schema:
-            $ref: '#/definitions/response.Response'
-      security:
-      - BearerAuth: []
-      summary: Approve pending store (Admin only)
-      tags:
-      - Stores
-  /admin/stores/{id}/reject:
-    put:
-      consumes:
-      - application/json
-      description: Reject a pending store. Store will be set to inactive status.
-      parameters:
-      - description: Store ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Store rejected successfully
-          schema:
-            $ref: '#/definitions/response.Response'
-        "400":
-          description: Bad request
-          schema:
-            $ref: '#/definitions/response.Response'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/response.Response'
-        "403":
-          description: Forbidden - admin only
-          schema:
-            $ref: '#/definitions/response.Response'
-        "409":
-          description: Conflict - store not pending
-          schema:
-            $ref: '#/definitions/response.Response'
-      security:
-      - BearerAuth: []
-      summary: Reject pending store (Admin only)
-      tags:
-      - Stores
   /admin/stores/{id}/suspend:
     put:
       consumes:
@@ -1296,57 +1239,6 @@ paths:
       security:
       - BearerAuth: []
       summary: Unsuspend a store (Admin only)
-      tags:
-      - Stores
-  /admin/stores/pending:
-    get:
-      consumes:
-      - application/json
-      description: Get all stores waiting for admin approval with pagination and search.
-      parameters:
-      - default: 1
-        description: Page number
-        in: query
-        name: page
-        type: integer
-      - default: 10
-        description: Items per page
-        in: query
-        name: limit
-        type: integer
-      - description: Search by store name
-        in: query
-        name: search
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Pending stores retrieved successfully
-          schema:
-            allOf:
-            - $ref: '#/definitions/response.PaginatedResponse'
-            - properties:
-                data:
-                  items:
-                    $ref: '#/definitions/domain.Store'
-                  type: array
-              type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/response.Response'
-        "403":
-          description: Forbidden - admin only
-          schema:
-            $ref: '#/definitions/response.Response'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/response.Response'
-      security:
-      - BearerAuth: []
-      summary: Get pending stores (Admin only)
       tags:
       - Stores
   /admin/transactions/{id}/refund:

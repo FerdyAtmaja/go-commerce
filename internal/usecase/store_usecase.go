@@ -32,7 +32,7 @@ func (u *StoreUsecase) CreateStore(userID uint64, req *domain.CreateStoreRequest
 		Name:        req.Name,
 		Description: req.Description,
 		PhotoURL:    req.PhotoURL,
-		Status:      "pending", // Start with pending status
+		Status:      "active", // Auto-activate store instead of pending
 		Rating:      0.0,
 	}
 
@@ -160,9 +160,10 @@ func (u *StoreUsecase) ActivateStore(userID uint64) error {
 		return errors.New("STORE_ALREADY_ACTIVE")
 	}
 
-	if store.Status == "pending" {
-		return errors.New("STORE_PENDING_APPROVAL")
-	}
+	// COMMENTED: Pending approval logic disabled
+	// if store.Status == "pending" {
+	// 	return errors.New("STORE_PENDING_APPROVAL")
+	// }
 
 	// Check if profile is complete
 	if store.Name == "" {
@@ -261,6 +262,8 @@ func (u *StoreUsecase) GetActiveStores(page, limit int, search string) ([]*domai
 	return stores, meta, nil
 }
 // ApproveStore allows admin to approve pending store
+// COMMENTED: Pending approval logic disabled
+/*
 func (u *StoreUsecase) ApproveStore(storeID uint64) error {
 	store, err := u.storeRepo.GetByID(storeID)
 	if err != nil {
@@ -274,8 +277,11 @@ func (u *StoreUsecase) ApproveStore(storeID uint64) error {
 	store.Status = "active"
 	return u.storeRepo.Update(store)
 }
+*/
 
 // RejectStore allows admin to reject pending store
+// COMMENTED: Pending approval logic disabled
+/*
 func (u *StoreUsecase) RejectStore(storeID uint64) error {
 	store, err := u.storeRepo.GetByID(storeID)
 	if err != nil {
@@ -289,8 +295,11 @@ func (u *StoreUsecase) RejectStore(storeID uint64) error {
 	store.Status = "inactive"
 	return u.storeRepo.Update(store)
 }
+*/
 
 // GetPendingStores returns stores waiting for admin approval
+// COMMENTED: Pending approval logic disabled
+/*
 func (u *StoreUsecase) GetPendingStores(page, limit int, search string) ([]*domain.Store, response.PaginationMeta, error) {
 	if page < 1 {
 		page = 1
@@ -317,3 +326,4 @@ func (u *StoreUsecase) GetPendingStores(page, limit int, search string) ([]*doma
 
 	return stores, meta, nil
 }
+*/
