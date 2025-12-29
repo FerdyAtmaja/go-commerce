@@ -42,7 +42,9 @@ func (r *Router) SetupUserRoutes(userUsecase *usecase.UserUsecase) {
 
 	// Protected routes
 	users.Get("/my", middleware.JWTMiddleware(r.jwtManager), userHandler.GetProfile)
+	users.Get("/profile", middleware.JWTMiddleware(r.jwtManager), userHandler.GetProfile)
 	users.Put("/my", middleware.JWTMiddleware(r.jwtManager), userHandler.UpdateProfile)
+	users.Put("/profile", middleware.JWTMiddleware(r.jwtManager), userHandler.UpdateProfile)
 	users.Put("/my/password", middleware.JWTMiddleware(r.jwtManager), userHandler.ChangePassword)
 }
 
