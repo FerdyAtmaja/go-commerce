@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"go-commerce/internal/domain"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -51,4 +52,12 @@ func (r *userRepository) Update(user *domain.User) error {
 
 func (r *userRepository) Delete(id uint64) error {
 	return r.db.Delete(&domain.User{}, id).Error
+}
+
+func (r *userRepository) UpdateLastLogin(userID uint64, lastLogin time.Time) error {
+	return r.db.Model(&domain.User{}).Where("id = ?", userID).Update("last_login_at", lastLogin).Error
+}
+
+func (r *userRepository) UpdateProfile(userID uint64, updates map[string]interface{}) error {
+	return r.db.Model(&domain.User{}).Where("id = ?", userID).Updates(updates).Error
 }

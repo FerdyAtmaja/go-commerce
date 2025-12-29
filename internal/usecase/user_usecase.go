@@ -77,7 +77,16 @@ func (u *UserUsecase) UpdateProfile(userID uint64, req *domain.UpdateProfileRequ
 		user.CityID = req.CityID
 	}
 
-	if err := u.userRepo.Update(user); err != nil {
+	if err := u.userRepo.UpdateProfile(userID, map[string]interface{}{
+		"name":         user.Name,
+		"notelp":       user.Phone,
+		"date_of_birth": user.DateOfBirth,
+		"gender":       user.Gender,
+		"about":        user.About,
+		"job":          user.Job,
+		"province_id":  user.ProvinceID,
+		"city_id":      user.CityID,
+	}); err != nil {
 		return nil, errors.New("failed to update user")
 	}
 

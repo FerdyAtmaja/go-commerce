@@ -7,6 +7,7 @@ import (
 	"go-commerce/internal/usecase/mocks"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -83,7 +84,7 @@ func TestUserUsecase_UpdateProfile_Success(t *testing.T) {
 	// Mock expectations
 	mockUserRepo.On("GetByID", userID).Return(existingUser, nil)
 	mockUserRepo.On("GetByPhone", req.Phone).Return(nil, gorm.ErrRecordNotFound) // Phone not exists
-	mockUserRepo.On("Update", existingUser).Return(nil)
+	mockUserRepo.On("UpdateProfile", userID, mock.AnythingOfType("map[string]interface {}")).Return(nil)
 
 	// Execute
 	result, err := userUsecase.UpdateProfile(userID, req)

@@ -13,10 +13,10 @@ import (
 )
 
 type AuthUsecase struct {
-	userRepo    domain.UserRepository
-	storeRepo   domain.StoreRepository
-	jwtManager  *jwt.JWTManager
-	db          *gorm.DB
+	userRepo   domain.UserRepository
+	storeRepo  domain.StoreRepository
+	jwtManager *jwt.JWTManager
+	db         *gorm.DB
 }
 
 func NewAuthUsecase(userRepo domain.UserRepository, storeRepo domain.StoreRepository, jwtManager *jwt.JWTManager, db *gorm.DB) *AuthUsecase {
@@ -141,8 +141,7 @@ func (u *AuthUsecase) Login(req *domain.LoginRequest) (*domain.AuthResponse, err
 	// Update last login async
 	go func() {
 		now := time.Now()
-		user.LastLoginAt = &now
-		u.userRepo.Update(user)
+		u.userRepo.UpdateLastLogin(user.ID, now)
 	}()
 
 	// Generate tokens

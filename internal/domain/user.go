@@ -37,7 +37,8 @@ type UserRepository interface {
 	GetByEmail(email string) (*User, error)
 	GetByPhone(phone string) (*User, error)
 	Update(user *User) error
-	Delete(id uint64) error
+	UpdateLastLogin(userID uint64, lastLogin time.Time) error
+	UpdateProfile(userID uint64, updates map[string]interface{}) error
 }
 
 type RegisterRequest struct {

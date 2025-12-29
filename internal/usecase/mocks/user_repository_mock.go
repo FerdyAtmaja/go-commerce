@@ -2,6 +2,7 @@ package mocks
 
 import (
 	"go-commerce/internal/domain"
+	"time"
 
 	"github.com/stretchr/testify/mock"
 )
@@ -46,5 +47,15 @@ func (m *MockUserRepository) Update(user *domain.User) error {
 
 func (m *MockUserRepository) Delete(id uint64) error {
 	args := m.Called(id)
+	return args.Error(0)
+}
+
+func (m *MockUserRepository) UpdateLastLogin(userID uint64, lastLogin time.Time) error {
+	args := m.Called(userID, lastLogin)
+	return args.Error(0)
+}
+
+func (m *MockUserRepository) UpdateProfile(userID uint64, updates map[string]interface{}) error {
+	args := m.Called(userID, updates)
 	return args.Error(0)
 }
