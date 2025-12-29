@@ -181,6 +181,16 @@ func (r *productRepository) UpdateSoldCountWithTx(dbTx interface{}, productID ui
 	return gormTx.Model(&domain.Product{}).Where("id = ?", productID).Update("sold_count", gorm.Expr("sold_count + ?", quantity)).Error
 }
 
+func (r *productRepository) GetStockWithLock(dbTx interface{}, productID uint64) (int, error) {
+	gormTx := dbTx.(*gorm.DB)
+	var product domain.Product
+	err := gormTx.Select("stok").Where("id = ?", productID).Set("gorm:query_option", "FOR UPDATE").First(&product).Error
+	if err != nil {
+		return 0, err
+	}
+	return product.Stok, nil
+}
+
 func (r *productRepository) Delete(id uint64) error {
 	return r.db.Delete(&domain.Product{}, id).Error
 }

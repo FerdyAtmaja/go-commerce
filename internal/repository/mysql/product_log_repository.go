@@ -27,6 +27,15 @@ func (r *productLogRepository) CreateAsync(productLog *domain.ProductLog) {
 	}()
 }
 
+func (r *productLogRepository) GetByID(id uint64) (*domain.ProductLog, error) {
+	var productLog domain.ProductLog
+	err := r.db.First(&productLog, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &productLog, nil
+}
+
 func (r *productLogRepository) GetByProductID(productID uint64) ([]*domain.ProductLog, error) {
 	var logs []*domain.ProductLog
 	err := r.db.Where("id_produk = ?", productID).Find(&logs).Error

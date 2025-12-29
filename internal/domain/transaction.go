@@ -88,6 +88,7 @@ type TransactionRepository interface {
 	GetByStatus(status string, limit, offset int) ([]*Transaction, int64, error)
 	Update(tx *Transaction) error
 	UpdateStatus(id uint64, status string) error
+	UpdateStatusWithTx(dbTx interface{}, id uint64, status string) error
 	UpdateOrderStatus(id uint64, orderStatus string) error
 	BeginTx() (interface{}, error)
 	CommitTx(tx interface{}) error
@@ -104,5 +105,6 @@ type TransactionItemRepository interface {
 type ProductLogRepository interface {
 	Create(log *ProductLog) error
 	CreateAsync(log *ProductLog)
+	GetByID(id uint64) (*ProductLog, error)
 	GetByProductID(productID uint64) ([]*ProductLog, error)
 }

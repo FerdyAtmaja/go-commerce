@@ -60,6 +60,15 @@ func (r *transactionRepository) UpdateStatus(id uint64, status string) error {
 	return r.db.Model(&domain.Transaction{}).Where("id = ?", id).Updates(updates).Error
 }
 
+func (r *transactionRepository) UpdateStatusWithTx(dbTx interface{}, id uint64, status string) error {
+	gormTx := dbTx.(*gorm.DB)
+	updates := map[string]interface{}{"status_pembayaran": status}
+	if status == "paid" {
+		updates["paid_at"] = time.Now()
+	}
+	return gormTx.Model(&domain.Transaction{}).Where("id = ?", id).Updates(updates).Error
+}
+
 func (r *transactionRepository) UpdatePaymentStatus(id uint64, paymentStatus string) error {
 	updates := map[string]interface{}{"payment_status": paymentStatus}
 	if paymentStatus == "paid" {

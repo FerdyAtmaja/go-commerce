@@ -240,12 +240,15 @@ func (u *TransactionUsecase) OnPaymentPaid(transactionID uint64) error {
 		return errors.New("transaction cancelled")
 	}
 
-	// Idempotent check
+	// Idempotent check - prevent double processing
+	if transaction.Status == "paid" {
+		return nil // Already processed successfully
+	}
 	if transaction.Status != "pending" {
-		return nil // Already processed
+		return errors.New("invalid transaction state")
 	}
 
-	// Begin database transaction
+	// Begin atomic database transaction
 	dbTx, err := u.transactionRepo.BeginTx()
 	if err != nil {
 		return err
@@ -258,25 +261,39 @@ func (u *TransactionUsecase) OnPaymentPaid(transactionID uint64) error {
 		}
 	}()
 
-	// Update payment status
-	err = u.transactionRepo.UpdateStatus(transactionID, "paid")
-	if err != nil {
-		u.transactionRepo.RollbackTx(dbTx)
-		return err
-	}
-
-	// Reduce stock and update sold count for each item
+	// Lock and validate stock for all items atomically
 	for _, item := range transaction.TransactionItems {
-		// Get product ID from product log
-		productLogs, err := u.productLogRepo.GetByProductID(item.ProductLogID)
-		if err != nil || len(productLogs) == 0 {
+		// Get product log to find actual product ID
+		productLog, err := u.productLogRepo.GetByID(item.ProductLogID)
+		if err != nil {
 			u.transactionRepo.RollbackTx(dbTx)
 			return errors.New("product log not found")
 		}
 
-		productID := productLogs[0].ProductID
+		productID := productLog.ProductID
 
-		// Update stock
+		// Lock product row and get current stock
+		currentStock, err := u.productRepo.GetStockWithLock(dbTx, productID)
+		if err != nil {
+			u.transactionRepo.RollbackTx(dbTx)
+			return err
+		}
+
+		// Validate stock availability at payment time
+		if currentStock < item.Quantity {
+			u.transactionRepo.RollbackTx(dbTx)
+			// Mark transaction as failed due to insufficient stock
+			u.transactionRepo.UpdateStatus(transactionID, "failed")
+			return errors.New("STOCK_NOT_AVAILABLE")
+		}
+	}
+
+	// All stock validated - proceed with deduction
+	for _, item := range transaction.TransactionItems {
+		productLog, _ := u.productLogRepo.GetByID(item.ProductLogID)
+		productID := productLog.ProductID
+
+		// Deduct stock atomically
 		err = u.productRepo.UpdateStockWithTx(dbTx, productID, item.Quantity)
 		if err != nil {
 			u.transactionRepo.RollbackTx(dbTx)
@@ -289,6 +306,13 @@ func (u *TransactionUsecase) OnPaymentPaid(transactionID uint64) error {
 			u.transactionRepo.RollbackTx(dbTx)
 			return err
 		}
+	}
+
+	// Mark transaction as paid
+	err = u.transactionRepo.UpdateStatusWithTx(dbTx, transactionID, "paid")
+	if err != nil {
+		u.transactionRepo.RollbackTx(dbTx)
+		return err
 	}
 
 	return u.transactionRepo.CommitTx(dbTx)
